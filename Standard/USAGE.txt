@@ -1,0 +1,97 @@
+DISCORD PROTON LAUNCHER - STANDARD EDITION
+==========================================
+
+Automatically updates Discord's application path in Proton VPN split tunneling
+when Discord moves to a new versioned app-* directory.
+
+WHO SHOULD USE THIS EDITION?
+- Regular Discord users.
+- Equicord users who do not modify or build Equicord source code.
+
+If you only use Equicord normally, Equicord already manages its own updates. You
+do not need the Developer-Equicord edition.
+
+REQUIREMENTS
+- The standard Discord desktop application must be installed on Windows.
+- Proton VPN must be installed and signed in.
+- Proton VPN > Split Tunneling must be enabled.
+- "Only included apps go through VPN" mode must be selected.
+- Discord's main application path must be added to Proton VPN's application list
+  once. Select Discord.exe inside the app-* directory, not Update.exe.
+
+FIRST-TIME PROTON VPN SETUP
+1. Open Proton VPN > Settings > Split Tunneling.
+2. Enable Split Tunneling.
+3. Select "Only included apps go through VPN".
+4. Use the add-application button to add the current main Discord executable:
+
+   %LocalAppData%\Discord\app-*\Discord.exe
+
+The app-* directory name changes with Discord versions. You must add the current
+path manually once; the launcher tracks later version changes automatically. Do
+not add %LocalAppData%\Discord\Update.exe as the main application.
+
+INSTALLATION AND FIRST RUN
+1. Extract the ZIP to a permanent directory where your account has write access.
+2. Double-click DiscordLauncher.bat.
+3. Discord starts after the checks complete.
+4. From then on, start Discord with DiscordLauncher.bat or DiscordBaslat.vbs.
+
+Always use the BAT file for the first run. It displays progress and errors. After
+everything works, use DiscordBaslat.vbs to launch without a visible console
+window.
+
+Do not run these files as administrator. Run them under the same normal Windows
+account used by Discord and Proton VPN. Windows or security software may display
+a script warning on the first run.
+
+CHECK ONLY
+DiscordLauncher.bat -CheckOnly
+
+This checks the Discord installation and Proton VPN settings without closing
+Discord or Proton VPN and without modifying their settings.
+
+LOGS AND BACKUPS
+- Detailed records are written to the logs directory inside the package.
+- Only the five newest launcher logs are kept.
+- Before Proton VPN settings are changed, a timestamped backup is written to the
+  DiscordVpnSyncBackups directory inside Proton VPN's settings directory.
+
+If an error occurs, read the message before closing the window. If a VBS launch
+fails, run the BAT file directly or open the newest file in the logs directory.
+
+DESKTOP SHORTCUT AND TASKBAR PIN
+Creating a new shortcut is the most reliable method:
+
+1. Right-click an empty area on the desktop and select New > Shortcut.
+2. Enter the line below. Replace FULL-PACKAGE-PATH with the package's real path:
+
+   C:\Windows\System32\wscript.exe "C:\FULL-PACKAGE-PATH\DiscordBaslat.vbs"
+
+3. Name the shortcut Discord.
+4. Right-click the new shortcut and open Properties.
+5. Set "Start in" to the full package directory path.
+6. Select Change Icon and use this file as the icon source:
+
+   %LocalAppData%\Discord\Update.exe
+
+7. Apply the changes, then right-click the shortcut and select "Pin to taskbar".
+
+CHANGE AN EXISTING PINNED DISCORD ICON
+1. Close Discord.
+2. Shift+right-click the pinned Discord icon and open Properties.
+3. Change the Target field to:
+
+   C:\Windows\System32\wscript.exe "C:\FULL-PACKAGE-PATH\DiscordBaslat.vbs"
+
+4. Set "Start in" to the full package directory path and select Apply.
+
+If Properties is unavailable, unpin the existing icon, create the desktop
+shortcut described above, and pin the new shortcut.
+
+IMPORTANT NOTES
+- If you move the package directory, update the shortcut's Target and Start in
+  fields to match the new path.
+- Do not publish Proton VPN UserSettings*.json files, the
+  DiscordVpnSyncBackups directory, or the logs directory. They may contain
+  personal account and local path information.

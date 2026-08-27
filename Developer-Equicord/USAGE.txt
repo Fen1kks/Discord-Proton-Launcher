@@ -1,0 +1,118 @@
+DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
+===================================================
+
+This edition is only for developers who modify Equicord source code, maintain a
+custom fork, and build/inject Equicord from source.
+
+If you only use Equicord normally, you do not need this edition. Equicord already
+manages its normal updates. The Standard edition is enough for Discord and Proton
+VPN path synchronization.
+
+REQUIREMENTS
+- The standard Discord desktop application must be installed on Windows.
+- Proton VPN must be installed and signed in.
+- Proton VPN > Split Tunneling must be enabled.
+- "Only included apps go through VPN" mode must be selected.
+- Discord's main application path must be added to Proton VPN's application list
+  once. Select Discord.exe inside the app-* directory, not Update.exe.
+- Git, Node.js 22 or newer, and pnpm must be installed.
+- Your Equicord fork must exist as a local Git repository.
+- A Git remote pointing to the main Equicord repository must exist. The default
+  remote name is upstream.
+- The default upstream branch is main.
+
+FIRST-TIME PROTON VPN SETUP
+1. Open Proton VPN > Settings > Split Tunneling.
+2. Enable Split Tunneling.
+3. Select "Only included apps go through VPN".
+4. Use the add-application button to add the current main Discord executable:
+
+   %LocalAppData%\Discord\app-*\Discord.exe
+
+You must add the current path manually once; the launcher tracks later app-*
+version changes automatically. Do not add
+%LocalAppData%\Discord\Update.exe as the main application.
+
+INSTALLATION AND FIRST RUN
+1. Extract the ZIP to a permanent directory where your account has write access.
+2. Double-click EquicordLauncher.bat.
+3. Enter the full path to your local Equicord Git repository.
+4. Enter the upstream remote and branch names, or accept the defaults.
+5. The settings are saved to launcher-config.json.
+
+Always use the BAT file for the first run so you can see the questions and any
+errors. After setup, start Discord with EquicordLauncher.bat or use
+DiscordBaslat.vbs to launch without a visible console window.
+
+Do not run these files as administrator. Run them under the same normal Windows
+account used by Discord, Proton VPN, and Git.
+
+WHAT DOES IT DO?
+- Fetches changes from the configured upstream repository.
+- Reapplies your personal commits on top of the upstream branch using
+  --rebase-merges and --autostash.
+- Runs pnpm install --frozen-lockfile and pnpm build when the last successful
+  build no longer matches the current source.
+- Checks and repairs Equicord injection after Discord updates.
+- Updates Discord's Proton VPN split-tunneling path.
+- Starts Discord.
+
+The launcher never pushes automatically. If a rebase conflict occurs, it stops.
+Resolve the conflict manually with Git before running the launcher again.
+
+CHANGE CONFIGURATION
+To change the repository path, remote, or branch, delete launcher-config.json
+and run EquicordLauncher.bat again.
+
+CHECK ONLY
+EquicordLauncher.bat -CheckOnly
+
+This checks Git, pnpm, the Equicord repository, Discord injection, and Proton VPN
+settings. It does not fetch, rebase, build, inject, close applications, or modify
+Discord and Proton VPN settings.
+
+LOGS AND BACKUPS
+- Detailed records are written to the logs directory inside the package.
+- Only the five newest launcher logs are kept.
+- launcher-config.json and launcher-state.json remain local only.
+- Before Proton VPN settings are changed, a timestamped backup is written to the
+  DiscordVpnSyncBackups directory inside Proton VPN's settings directory.
+
+If an error occurs, read the message before closing the window. If a VBS launch
+fails, run the BAT file directly or open the newest file in the logs directory.
+
+DESKTOP SHORTCUT AND TASKBAR PIN
+Creating a new shortcut is the most reliable method:
+
+1. Right-click an empty area on the desktop and select New > Shortcut.
+2. Enter the line below. Replace FULL-PACKAGE-PATH with the package's real path:
+
+   C:\Windows\System32\wscript.exe "C:\FULL-PACKAGE-PATH\DiscordBaslat.vbs"
+
+3. Name the shortcut Discord.
+4. Right-click the new shortcut and open Properties.
+5. Set "Start in" to the full package directory path.
+6. Select Change Icon and use this file as the icon source:
+
+   %LocalAppData%\Discord\Update.exe
+
+7. Apply the changes, then right-click the shortcut and select "Pin to taskbar".
+
+CHANGE AN EXISTING PINNED DISCORD ICON
+1. Close Discord.
+2. Shift+right-click the pinned Discord icon and open Properties.
+3. Change the Target field to:
+
+   C:\Windows\System32\wscript.exe "C:\FULL-PACKAGE-PATH\DiscordBaslat.vbs"
+
+4. Set "Start in" to the full package directory path and select Apply.
+
+If Properties is unavailable, unpin the existing icon, create the desktop
+shortcut described above, and pin the new shortcut.
+
+IMPORTANT NOTES
+- If you move the package directory, update the shortcut's Target and Start in
+  fields to match the new path.
+- Do not publish launcher-config.json, launcher-state.json, logs, Proton VPN
+  UserSettings*.json files, or the DiscordVpnSyncBackups directory. They may
+  contain personal account, local repository, and path information.
