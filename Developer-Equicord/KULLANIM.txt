@@ -1,0 +1,53 @@
+DISCORD PROTON LAUNCHER - DEVELOPER EQUICORD EDITION
+====================================================
+
+Bu edition yalnizca Equicord kaynak kodunu degistiren, kendi forkunu tutan ve
+kaynaktan build/inject yapan gelistiriciler icindir.
+
+Equicord'u sadece normal sekilde kullaniyorsaniz bu edition'a ihtiyaciniz yoktur.
+Equicord normal guncellemelerini kendisi yonetir. Standard klasorundeki edition
+Discord ve Proton VPN yol senkronizasyonu icin yeterlidir.
+
+GEREKSINIMLER
+- Windows'ta standart Discord kurulu olmali.
+- Proton VPN Include mode ayarlanmis ve mevcut Discord.exe listeye eklenmis olmali.
+- Git, Node.js 22 veya daha yeni ve pnpm kurulu olmali.
+- Equicord fork'u yerel bir Git deposu olarak bulunmali.
+- Equicord ana deposunu gosteren bir remote bulunmali. Varsayilan ad: upstream
+- Varsayilan upstream branch: main
+
+ILK CALISTIRMA
+1. EquicordLauncher.bat dosyasina cift tiklayin.
+2. Equicord Git deponuzun tam yolunu girin.
+3. Upstream remote ve branch adlarini girin veya varsayilanlari kabul edin.
+4. Ayarlar launcher-config.json dosyasina kaydedilir.
+
+Ilk calistirmayi VBS ile yapmayin; soru ve hatalari gorebilmek icin BAT kullanin.
+Kurulum tamamlandiktan sonra pencere gostermeden acmak icin DiscordBaslat.vbs
+dosyasini kullanabilirsiniz.
+
+NE YAPAR?
+- upstream degisikliklerini fetch eder.
+- Kisisel commit'leri upstream branch uzerine --rebase-merges ve --autostash ile
+  yeniden uygular.
+- Son basarili build degismisse pnpm install --frozen-lockfile ve pnpm build
+  calistirir.
+- Discord guncellemesinden sonra Equicord enjeksiyonunu kontrol edip onarir.
+- Proton VPN split tunneling Discord.exe yolunu gunceller.
+- Yalnizca en yeni 5 launcher logunu saklar.
+
+UYARI
+Rebase sirasinda conflict olursa launcher durur. Conflict'i Git ile elle cozmeden
+launcher'i tekrar calistirmayin. Launcher otomatik push yapmaz.
+
+AYAR DEGISTIRME
+Repo yolu, remote veya branch degistirmek icin launcher-config.json dosyasini
+silin ve EquicordLauncher.bat dosyasini yeniden calistirin.
+
+YALNIZCA KONTROL
+EquicordLauncher.bat -CheckOnly
+
+Bu komut Git, pnpm, Equicord repo, Discord enjeksiyonu ve Proton ayarlarini
+denetler; Discord'u veya Proton'u kapatmaz.
+
+Dosyalari yonetici olarak calistirmayin.

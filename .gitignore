@@ -1,0 +1,21 @@
+# Runtime data
+**/logs/
+**/backups/
+**/launcher-state.json
+**/launcher-config.json
+
+# Proton VPN settings and backups must never be committed
+**/UserSettings*.json
+**/UserSettings*.json.*
+**/DiscordVpnSyncBackups/
+
+# Release output
+dist/
+*.zip
+*.sha256
+
+# Editor and OS files
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
