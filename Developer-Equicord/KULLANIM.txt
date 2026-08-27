@@ -1,30 +1,51 @@
-DISCORD PROTON LAUNCHER - DEVELOPER EQUICORD EDITION
-====================================================
+DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
+===================================================
 
 Bu edition yalnizca Equicord kaynak kodunu degistiren, kendi forkunu tutan ve
 kaynaktan build/inject yapan gelistiriciler icindir.
 
 Equicord'u sadece normal sekilde kullaniyorsaniz bu edition'a ihtiyaciniz yoktur.
-Equicord normal guncellemelerini kendisi yonetir. Standard klasorundeki edition
-Discord ve Proton VPN yol senkronizasyonu icin yeterlidir.
+Equicord normal guncellemelerini kendisi yonetir. Standard edition, Discord ve
+Proton VPN yol senkronizasyonu icin yeterlidir.
 
 GEREKSINIMLER
 - Windows'ta standart Discord kurulu olmali.
-- Proton VPN Include mode ayarlanmis ve mevcut Discord.exe listeye eklenmis olmali.
+- Proton VPN kurulu ve kullanici oturumu acik olmali.
+- Proton VPN > Split Tunneling etkin olmali.
+- "Only included apps go through VPN" / "Yalnizca eklenen uygulamalar VPN'den
+  gecsin" modu secili olmali.
+- Discord'un ana uygulama yolu Proton VPN uygulama listesine bir kez eklenmis
+  olmali. Update.exe degil, app-* klasorunun icindeki Discord.exe secilmelidir.
 - Git, Node.js 22 veya daha yeni ve pnpm kurulu olmali.
 - Equicord fork'u yerel bir Git deposu olarak bulunmali.
 - Equicord ana deposunu gosteren bir remote bulunmali. Varsayilan ad: upstream
 - Varsayilan upstream branch: main
 
-ILK CALISTIRMA
-1. EquicordLauncher.bat dosyasina cift tiklayin.
-2. Equicord Git deponuzun tam yolunu girin.
-3. Upstream remote ve branch adlarini girin veya varsayilanlari kabul edin.
-4. Ayarlar launcher-config.json dosyasina kaydedilir.
+ILK PROTON VPN AYARI
+1. Proton VPN > Settings > Split Tunneling bolumunu acin.
+2. Split Tunneling'i etkinlestirin.
+3. "Only included apps go through VPN" secenegini secin.
+4. Uygulama ekleme dugmesiyle su anki ana Discord.exe dosyasini ekleyin:
 
-Ilk calistirmayi VBS ile yapmayin; soru ve hatalari gorebilmek icin BAT kullanin.
-Kurulum tamamlandiktan sonra pencere gostermeden acmak icin DiscordBaslat.vbs
-dosyasini kullanabilirsiniz.
+   %LocalAppData%\Discord\app-*\Discord.exe
+
+Ilk mevcut yolu elle eklemek gereklidir; sonraki app-* surum degisikliklerini
+launcher otomatik izler. %LocalAppData%\Discord\Update.exe dosyasini ana uygulama
+yerine eklemeyin.
+
+KURULUM VE ILK CALISTIRMA
+1. ZIP dosyasini, yazma izniniz olan kalici bir klasore cikarin.
+2. EquicordLauncher.bat dosyasina cift tiklayin.
+3. Equicord Git deponuzun tam yolunu girin.
+4. Upstream remote ve branch adlarini girin veya varsayilanlari kabul edin.
+5. Ayarlar launcher-config.json dosyasina kaydedilir.
+
+Ilk calistirmayi mutlaka BAT dosyasiyla yapin; sorulari ve hatalari bu pencerede
+gorursunuz. Kurulum tamamlandiktan sonra Discord'u EquicordLauncher.bat veya
+pencere gostermeyen DiscordBaslat.vbs ile acabilirsiniz.
+
+Dosyalari yonetici olarak calistirmayin; Discord, Proton ve Git'in kullanildigi
+normal Windows hesabi ile calistirin.
 
 NE YAPAR?
 - upstream degisikliklerini fetch eder.
@@ -34,11 +55,10 @@ NE YAPAR?
   calistirir.
 - Discord guncellemesinden sonra Equicord enjeksiyonunu kontrol edip onarir.
 - Proton VPN split tunneling Discord.exe yolunu gunceller.
-- Yalnizca en yeni 5 launcher logunu saklar.
+- Discord'u baslatir.
 
-UYARI
-Rebase sirasinda conflict olursa launcher durur. Conflict'i Git ile elle cozmeden
-launcher'i tekrar calistirmayin. Launcher otomatik push yapmaz.
+Launcher otomatik push yapmaz. Rebase sirasinda conflict olursa durur; conflict'i
+Git ile elle cozmeden launcher'i tekrar calistirmayin.
 
 AYAR DEGISTIRME
 Repo yolu, remote veya branch degistirmek icin launcher-config.json dosyasini
@@ -48,6 +68,53 @@ YALNIZCA KONTROL
 EquicordLauncher.bat -CheckOnly
 
 Bu komut Git, pnpm, Equicord repo, Discord enjeksiyonu ve Proton ayarlarini
-denetler; Discord'u veya Proton'u kapatmaz.
+denetler; fetch/rebase/build/inject yapmaz, Discord'u veya Proton'u kapatmaz ve
+ayarlari degistirmez.
 
-Dosyalari yonetici olarak calistirmayin.
+LOG VE YEDEKLER
+- Ayrintili kayitlar paket klasorundeki logs klasorune yazilir.
+- Yalnizca en yeni 5 launcher logu saklanir.
+- launcher-config.json ve launcher-state.json yalnizca yerelde tutulur.
+- Proton ayari degismeden once Proton ayar klasorundeki
+  DiscordVpnSyncBackups klasorune tarihli yedek alinir.
+
+Bir hata olursa pencereyi kapatmadan mesaji okuyun. VBS ile baslatirken hata
+gorurseniz BAT dosyasini dogrudan calistirin veya logs klasorundeki son kaydi acin.
+
+MASAUSTU KISAYOLU VE GOREV CUBUGUNA SABITLEME
+En sorunsuz yontem yeni bir kisayol olusturmaktir:
+
+1. Masaustunde bos bir yere sag tiklayin ve Yeni > Kisayol secin.
+2. Konum alanina asagidaki satiri yazin. PAKETIN-TAM-YOLU kismini paketin
+   bilgisayarinizdaki gercek yoluyla degistirin:
+
+   C:\Windows\System32\wscript.exe "C:\PAKETIN-TAM-YOLU\DiscordBaslat.vbs"
+
+3. Kisayola Discord adini verin.
+4. Yeni kisayola sag tiklayip Ozellikler'i acin.
+5. "Baslangic yeri" alanina paket klasorunun tam yolunu yazin.
+6. Simge Degistir dugmesine basin ve simge kaynagi olarak sunu secin:
+
+   %LocalAppData%\Discord\Update.exe
+
+7. Uygula'ya basin. Ardindan kisayola sag tiklayip "Gorev cubuguna sabitle"
+   secenegini kullanin.
+
+MEVCUT SABIT DISCORD IKONUNU DEGISTIRME
+1. Discord'u kapatin.
+2. Gorev cubugundaki sabit Discord ikonuna Shift+sag tiklayip Ozellikler'i acin.
+3. Hedef alanini su bicimde degistirin:
+
+   C:\Windows\System32\wscript.exe "C:\PAKETIN-TAM-YOLU\DiscordBaslat.vbs"
+
+4. "Baslangic yeri" alanini paket klasorunun tam yolu yapip Uygula'ya basin.
+
+Ozellikler secenegi gorunmezse mevcut ikonu gorev cubugundan kaldirin ve yukarida
+anlatilan masaustu kisayolunu olusturup yeniden sabitleyin.
+
+ONEMLI NOTLAR
+- Paket klasorunu tasirsaniz kisayolun Hedef ve Baslangic yeri alanlarini da
+  yeni yola gore guncelleyin.
+- launcher-config.json, launcher-state.json, logs, Proton VPN UserSettings*.json
+  ve DiscordVpnSyncBackups klasorunu internette paylasmayin. Kisisel hesap, yerel
+  repo ve klasor bilgileri icerebilirler.

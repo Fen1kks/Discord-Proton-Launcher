@@ -1,56 +1,65 @@
-DISCORD + PROTON VPN BASLATICI
-================================
+DISCORD PROTON LAUNCHER - STANDARD EDITION
+==========================================
 
-Standart Discord kurulumunun surum klasoru degistiginde 
-Proton VPN split tunneling kaydini otomatik olarak gunceller.
+Discord yeni bir app-* surum klasorune tasindiginda Proton VPN split tunneling
+uygulama yolunu otomatik olarak gunceller.
+
+BU EDITION KIMLER ICIN?
+- Normal Discord kullananlar.
+- Equicord kullanan fakat kaynak kodunu degistirmeyen/build etmeyenler.
+
+Equicord'u yalnizca normal sekilde kullaniyorsaniz Equicord guncellemelerini
+Equicord zaten kendisi yonetir. Developer-Equicord edition'ina ihtiyaciniz yoktur.
 
 GEREKSINIMLER
 - Windows'ta standart Discord kurulu olmali.
 - Proton VPN kurulu ve kullanici oturumu acik olmali.
 - Proton VPN > Split Tunneling etkin olmali.
-- "Only included apps go through VPN" / "Yalnizca eklenen uygulamalar VPN'den gecsin"
-  modu secili olmali.
-- Discord'un ana uygulamasinin yolu Proton VPN uygulama listesine ekli olmali.
-  Update.exe degil, app-* klasorunun icindeki Discord.exe secilmelidir.
+- "Only included apps go through VPN" / "Yalnizca eklenen uygulamalar VPN'den
+  gecsin" modu secili olmali.
+- Discord'un ana uygulama yolu Proton VPN uygulama listesine bir kez eklenmis
+  olmali. Update.exe degil, app-* klasorunun icindeki Discord.exe secilmelidir.
 
 ILK PROTON VPN AYARI
 1. Proton VPN > Settings > Split Tunneling bolumunu acin.
 2. Split Tunneling'i etkinlestirin.
 3. "Only included apps go through VPN" secenegini secin.
 4. Uygulama ekleme dugmesiyle su anki ana Discord.exe dosyasini ekleyin:
+
    %LocalAppData%\Discord\app-*\Discord.exe
 
 Buradaki app-* klasorunun adi Discord surumune gore degisir. Ilk mevcut yolu
 elle eklemek gereklidir; sonraki surum degisikliklerini launcher otomatik izler.
 %LocalAppData%\Discord\Update.exe dosyasini ana uygulama yerine eklemeyin.
 
-KULLANIM
-1. Paket klasorunu bilgisayarda yazma izniniz olan kalici bir yere cikarin.
+KURULUM VE ILK CALISTIRMA
+1. ZIP dosyasini, yazma izniniz olan kalici bir klasore cikarin.
 2. DiscordLauncher.bat dosyasina cift tiklayin.
-3. Discord'u bundan sonra bu BAT dosyasiyla acin.
+3. Kontroller tamamlandiktan sonra Discord acilir.
+4. Discord'u bundan sonra DiscordLauncher.bat veya DiscordBaslat.vbs ile acin.
 
-DiscordLauncher.bat ilerlemeyi ve hatalari ekranda gosterir. Ilk calistirmayi
-mutlaka BAT dosyasiyla yapin. Her sey calistiktan sonra pencere gormeden acmak
-icin DiscordBaslat.vbs dosyasini kullanabilirsiniz.
+Ilk calistirmayi mutlaka BAT dosyasiyla yapin. BAT ilerlemeyi ve hatalari ekranda
+gosterir. Her sey calistiktan sonra pencere gormeden acmak icin
+DiscordBaslat.vbs dosyasini kullanabilirsiniz.
 
-Ilk kullanimda Windows veya guvenlik yazilimi betik icin uyari gosterebilir.
-Dosyayi yonetici olarak calistirmayin; Discord ve Proton'un kullanildigi normal
-Windows hesabi ile calistirin.
-
-Bir hata olursa pencereyi kapatmadan mesaji okuyun. Ayrintili kayitlar paket
-klasorundeki logs klasorune yazilir ve yalnizca en yeni 5 calistirma saklanir.
-vpn_sync.ps1, Proton ayarini degistirmeden once orijinal ayar
-dosyasinin DiscordVpnSyncBackups klasorune tarihli yedegini alir.
+Dosyalari yonetici olarak calistirmayin; Discord ve Proton'un kullanildigi normal
+Windows hesabi ile calistirin. Ilk kullanimda Windows veya guvenlik yazilimi betik
+icin uyari gosterebilir.
 
 YALNIZCA KONTROL
 DiscordLauncher.bat -CheckOnly
 
-Bu komut kurulum ve Proton ayarlarini denetler; Discord'u veya Proton'u kapatmaz.
+Bu komut Discord kurulumunu ve Proton ayarlarini denetler; Discord'u veya Proton'u
+kapatmaz ve ayarlari degistirmez.
 
-SESSIZ VBS ILE ACMA
-DiscordBaslat.vbs, ayni klasordeki DiscordLauncher.bat dosyasini pencere
-gostermeden calistirir. VBS ile Discord acilmazsa hatayi gorebilmek icin BAT
-dosyasini dogrudan calistirin veya logs klasorundeki son kaydi acin.
+LOG VE YEDEKLER
+- Ayrintili kayitlar paket klasorundeki logs klasorune yazilir.
+- Yalnizca en yeni 5 launcher logu saklanir.
+- Proton ayari degismeden once Proton ayar klasorundeki
+  DiscordVpnSyncBackups klasorune tarihli yedek alinir.
+
+Bir hata olursa pencereyi kapatmadan mesaji okuyun. VBS ile baslatirken hata
+gorurseniz BAT dosyasini dogrudan calistirin veya logs klasorundeki son kaydi acin.
 
 MASAUSTU KISAYOLU VE GOREV CUBUGUNA SABITLEME
 En sorunsuz yontem yeni bir kisayol olusturmaktir:
@@ -63,7 +72,7 @@ En sorunsuz yontem yeni bir kisayol olusturmaktir:
 
 3. Kisayola Discord adini verin.
 4. Yeni kisayola sag tiklayip Ozellikler'i acin.
-5. "Baslangic yeri" alanina Paket klasorunun tam yolunu yazin.
+5. "Baslangic yeri" alanina paket klasorunun tam yolunu yazin.
 6. Simge Degistir dugmesine basin ve simge kaynagi olarak sunu secin:
 
    %LocalAppData%\Discord\Update.exe
@@ -72,14 +81,20 @@ En sorunsuz yontem yeni bir kisayol olusturmaktir:
    secenegini kullanin.
 
 MEVCUT SABIT DISCORD IKONUNU DEGISTIRME
-1. Gorev cubugundaki sabit Discord ikonuna shift+sag tiklayin. (Discord kapali olmali)
-2. Hedef alanini su bicimde degistirin:
+1. Discord'u kapatin.
+2. Gorev cubugundaki sabit Discord ikonuna Shift+sag tiklayip Ozellikler'i acin.
+3. Hedef alanini su bicimde degistirin:
 
    C:\Windows\System32\wscript.exe "C:\PAKETIN-TAM-YOLU\DiscordBaslat.vbs"
 
-3. "Baslangic yeri" alanini Paket klasorunun tam yolu yapin ve Uygula'ya basin.
+4. "Baslangic yeri" alanini paket klasorunun tam yolu yapip Uygula'ya basin.
 
 Ozellikler secenegi gorunmezse mevcut ikonu gorev cubugundan kaldirin ve yukarida
-anlatilan masaustu kisayolunu olusturup yeniden sabitleyin. Paket klasorunu daha
-sonra tasirsaniz kisayolun Hedef ve Baslangic yeri alanlarini da yeni yola gore
-guncellemeniz gerekir.
+anlatilan masaustu kisayolunu olusturup yeniden sabitleyin.
+
+ONEMLI NOTLAR
+- Paket klasorunu tasirsaniz kisayolun Hedef ve Baslangic yeri alanlarini da
+  yeni yola gore guncelleyin.
+- Proton VPN UserSettings*.json dosyalarini, DiscordVpnSyncBackups klasorunu veya
+  logs klasorunu internette paylasmayin. Kisisel hesap ve klasor bilgileri
+  icerebilirler.
