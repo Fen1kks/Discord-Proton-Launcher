@@ -411,7 +411,7 @@ try {
     $discordManaged = $true
 
     Write-Step "Equicord upstream ile esleniyor"
-    Invoke-External -Command 'git.exe' -Arguments @('fetch', '--tags', '--prune', $upstreamRemoteName, $upstreamBranchName) -WorkingDirectory $repoPath
+    Invoke-External -Command 'git.exe' -Arguments @('fetch', '--no-tags', '--prune', $upstreamRemoteName) -WorkingDirectory $repoPath
     $upstreamRef = "$upstreamRemoteName/$upstreamBranchName"
     Invoke-External -Command 'git.exe' -Arguments @('rebase', '--rebase-merges', '--autostash', $upstreamRef) -WorkingDirectory $repoPath
 
