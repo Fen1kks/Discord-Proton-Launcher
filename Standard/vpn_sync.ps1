@@ -172,7 +172,6 @@ function Write-SettingsAtomically {
 
     $timestamp = Get-Date -Format 'yyyyMMdd-HHmmssfff'
     $backupPath = Join-Path $backupDirectory ("{0}.{1}.bak" -f $SettingsFile.Name, $timestamp)
-    Copy-Item -LiteralPath $SettingsFile.FullName -Destination $backupPath
 
     $RootObject.SplitTunnelingInverseAppsList = ConvertTo-Json -InputObject ([object[]]$Apps) -Compress -Depth 20
     $finalJson = $RootObject | ConvertTo-Json -Depth 50
@@ -183,7 +182,10 @@ function Write-SettingsAtomically {
         [System.IO.File]::WriteAllText($temporaryPath, $finalJson, $utf8NoBom)
         $validationRoot = Get-Content -LiteralPath $temporaryPath -Raw | ConvertFrom-Json
         $null = $validationRoot.SplitTunnelingInverseAppsList | ConvertFrom-Json
-        [System.IO.File]::Replace($temporaryPath, $SettingsFile.FullName, $null, $true)
+        # Windows PowerShell 5.1/.NET Framework rejects a null backup path here.
+        # Let File.Replace create the timestamped backup as part of the same
+        # atomic operation so the original remains intact if replacement fails.
+        [System.IO.File]::Replace($temporaryPath, $SettingsFile.FullName, $backupPath, $true)
     }
     finally {
         if (Test-Path -LiteralPath $temporaryPath) {
