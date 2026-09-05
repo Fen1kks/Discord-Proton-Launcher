@@ -1,4 +1,4 @@
-DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
+﻿DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
 ===================================================
 
 This edition is only for developers who modify Equicord source code, maintain a
@@ -116,3 +116,18 @@ IMPORTANT NOTES
 - Do not publish launcher-config.json, launcher-state.json, logs, Proton VPN
   UserSettings*.json files, or the DiscordVpnSyncBackups directory. They may
   contain personal account, local repository, and path information.
+
+ROBLOX
+
+Both editions include `RobloxVpnSync.bat`. It selects the newest
+`RobloxPlayerBeta.exe` under `%LocalAppData%\Roblox\Versions` using numeric
+executable version metadata and adds or updates its Proton VPN entry. Split
+tunneling must be enabled in inverse mode (only listed applications use VPN).
+
+Run it after Roblox finishes updating, before joining a game. Use
+`RobloxVpnSync.bat -WhatIf` for a read-only check. It does not launch Roblox or
+watch for updates in the background. When a path changes, settings are backed up
+and the Proton client is restarted if it was running.
+
+Discord launchers also refresh an existing Roblox entry in Proton. An absent
+Roblox installation does not prevent Discord synchronization.

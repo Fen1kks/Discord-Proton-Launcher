@@ -1,6 +1,7 @@
-[CmdletBinding(SupportsShouldProcess = $true)]
+﻿[CmdletBinding(SupportsShouldProcess = $true)]
 param(
-    [string]$DiscordExePath
+    [string]$DiscordExePath,
+    [switch]$RobloxOnly
 )
 
 Set-StrictMode -Version 2.0
@@ -24,6 +25,24 @@ function Get-LatestDiscordExecutable {
         throw 'Guncel Discord.exe bulunamadi.'
     }
     return $latest.Path
+}
+
+function Get-LatestRobloxExecutable {
+    param([string]$VersionsDirectory = (Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Roblox\Versions'))
+
+    if (-not (Test-Path -LiteralPath $VersionsDirectory -PathType Container)) { return $null }
+    $candidates = foreach ($directory in Get-ChildItem -LiteralPath $VersionsDirectory -Directory -Filter 'version-*') {
+        $exePath = Join-Path $directory.FullName 'RobloxPlayerBeta.exe'
+        if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) { continue }
+        $file = Get-Item -LiteralPath $exePath
+        $info = $file.VersionInfo
+        # Folder names are hashes, not sortable versions. Use the executable's numeric version.
+        $version = New-Object System.Version($info.FileMajorPart, $info.FileMinorPart, $info.FileBuildPart, $info.FilePrivatePart)
+        [pscustomobject]@{ Path = $exePath; Version = $version; LastWriteTime = $directory.LastWriteTimeUtc }
+    }
+    $latest = $candidates | Sort-Object -Property @{ Expression = 'Version'; Descending = $true }, @{ Expression = 'LastWriteTime'; Descending = $true } | Select-Object -First 1
+    if ($latest) { return $latest.Path }
+    return $null
 }
 
 function Get-ProtonSettingsFile {
@@ -78,7 +97,7 @@ function Assert-InverseSplitTunnelingMode {
     }
 }
 
-function Set-DiscordEntry {
+function Set-AppEntry {
     param(
         [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Apps,
         [Parameter(Mandatory = $true)][string]$ExePath
@@ -86,11 +105,11 @@ function Set-DiscordEntry {
 
     $matches = @($Apps | Where-Object {
         $_.PSObject.Properties['AppFilePath'] -and
-        [System.IO.Path]::GetFileName([string]$_.AppFilePath) -ieq 'Discord.exe'
+        [System.IO.Path]::GetFileName([string]$_.AppFilePath) -ieq [System.IO.Path]::GetFileName($ExePath)
     })
 
     $changed = $false
-    Write-Verbose ("Eslesen Discord kaydi sayisi: {0}" -f $matches.Count)
+    Write-Verbose ("Eslesen uygulama kaydi sayisi: {0}" -f $matches.Count)
     if ($matches.Count -eq 0) {
         $Apps += [pscustomobject]@{
             AppFilePath = $ExePath
@@ -113,6 +132,17 @@ function Set-DiscordEntry {
         }
     }
 
+    return [pscustomobject]@{ Apps = @($Apps); Changed = $changed }
+}
+
+function Set-TargetEntries {
+    param([AllowEmptyCollection()][object[]]$Apps, [string[]]$Paths)
+    $changed = $false
+    foreach ($path in $Paths) {
+        $result = Set-AppEntry -Apps $Apps -ExePath $path
+        $Apps = $result.Apps
+        $changed = $changed -or $result.Changed
+    }
     return [pscustomobject]@{ Apps = @($Apps); Changed = $changed }
 }
 
@@ -196,29 +226,46 @@ function Write-SettingsAtomically {
     return $backupPath
 }
 
-if ([string]::IsNullOrWhiteSpace($DiscordExePath)) {
-    $DiscordExePath = Get-LatestDiscordExecutable
+$targetPaths = @()
+if (-not $RobloxOnly) {
+    if ([string]::IsNullOrWhiteSpace($DiscordExePath)) {
+        $DiscordExePath = Get-LatestDiscordExecutable
+    }
+    $DiscordExePath = [System.IO.Path]::GetFullPath($DiscordExePath)
+    if (-not (Test-Path -LiteralPath $DiscordExePath -PathType Leaf) -or [System.IO.Path]::GetFileName($DiscordExePath) -ine 'Discord.exe') {
+        throw "Gecersiz Discord.exe yolu: $DiscordExePath"
+    }
+    $targetPaths += $DiscordExePath
 }
-$DiscordExePath = [System.IO.Path]::GetFullPath($DiscordExePath)
-if (-not (Test-Path -LiteralPath $DiscordExePath -PathType Leaf) -or [System.IO.Path]::GetFileName($DiscordExePath) -ine 'Discord.exe') {
-    throw "Gecersiz Discord.exe yolu: $DiscordExePath"
+$robloxExePath = Get-LatestRobloxExecutable
+if ($RobloxOnly -and -not $robloxExePath) {
+    throw 'Roblox Versions klasorunde RobloxPlayerBeta.exe bulunamadi.'
 }
 
 $settingsFile = Get-ProtonSettingsFile
 $settings = Read-ProtonSettings -SettingsFile $settingsFile
 Assert-InverseSplitTunnelingMode -RootObject $settings.Root
-$update = Set-DiscordEntry -Apps $settings.Apps -ExePath $DiscordExePath
+# Normal Discord launches maintain Roblox only when the user already added it to Proton.
+$hasRobloxEntry = @($settings.Apps | Where-Object {
+    $_.PSObject.Properties['AppFilePath'] -and
+    [System.IO.Path]::GetFileName([string]$_.AppFilePath) -ieq 'RobloxPlayerBeta.exe'
+}).Count -gt 0
+if ($robloxExePath -and ($RobloxOnly -or $hasRobloxEntry)) {
+    $targetPaths += $robloxExePath
+    Write-Host "Roblox: $robloxExePath"
+}
+$update = Set-TargetEntries -Apps $settings.Apps -Paths $targetPaths
 
 if (-not $update.Changed) {
-    Write-Host "[STABIL] Proton VPN Discord rotasi zaten guncel." -ForegroundColor Green
+    Write-Host "[STABIL] Proton VPN uygulama rotalari zaten guncel." -ForegroundColor Green
     return
 }
 
-if (-not $PSCmdlet.ShouldProcess($settingsFile.FullName, "Discord split tunneling yolunu $DiscordExePath olarak guncelle")) {
+if (-not $PSCmdlet.ShouldProcess($settingsFile.FullName, "Split tunneling yollarini guncelle: $($targetPaths -join '; ')")) {
     return
 }
 
-Write-Host '[VPN] Discord yolu degisti; Proton ayari guvenli bicimde guncelleniyor...' -ForegroundColor Yellow
+Write-Host '[VPN] Uygulama yolu degisti; Proton ayari guvenli bicimde guncelleniyor...' -ForegroundColor Yellow
 $protonWasRunning = $false
 try {
     $protonWasRunning = Stop-ProtonClient
@@ -227,7 +274,7 @@ try {
     $settingsFile = Get-ProtonSettingsFile
     $settings = Read-ProtonSettings -SettingsFile $settingsFile
     Assert-InverseSplitTunnelingMode -RootObject $settings.Root
-    $update = Set-DiscordEntry -Apps $settings.Apps -ExePath $DiscordExePath
+    $update = Set-TargetEntries -Apps $settings.Apps -Paths $targetPaths
     if ($update.Changed) {
         $backupPath = Write-SettingsAtomically -SettingsFile $settingsFile -RootObject $settings.Root -Apps $update.Apps
         Write-Host "[VPN] Ayar guncellendi. Yedek: $backupPath" -ForegroundColor Green

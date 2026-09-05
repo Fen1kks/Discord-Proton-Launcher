@@ -1,4 +1,4 @@
-DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
+﻿DISCORD PROTON LAUNCHER - DEVELOPER-EQUICORD EDITION
 ===================================================
 
 Bu edition yalnizca Equicord kaynak kodunu degistiren, kendi forkunu tutan ve
@@ -118,3 +118,18 @@ ONEMLI NOTLAR
 - launcher-config.json, launcher-state.json, logs, Proton VPN UserSettings*.json
   ve DiscordVpnSyncBackups klasorunu internette paylasmayin. Kisisel hesap, yerel
   repo ve klasor bilgileri icerebilirler.
+
+ROBLOX
+
+Her iki paketteki `RobloxVpnSync.bat`, `%LocalAppData%\Roblox\Versions` altindaki
+RobloxPlayerBeta.exe dosyalarini sayisal surum bilgisine gore siralar ve en yeni
+surumu Proton VPN listesine ekler veya mevcut kaydi gunceller. Split tunneling
+etkin ve yalnizca listedeki uygulamalarin VPN kullanacagi modda olmalidir.
+
+Roblox guncellemesi bittikten sonra oyuna girmeden once bu dosyayi calistirin.
+Kontrol icin `RobloxVpnSync.bat -WhatIf` kullanin. Bu dosya Roblox'u baslatmaz ve
+arka planda guncelleme izlemez. Proton aciksa, yol degistiginde yeniden baslatilir;
+ayar degisikliginden once yedek alinir.
+
+Discord baslaticilari da Proton listesinde zaten bulunan Roblox kaydini gunceller.
+Roblox kurulu degilse Discord baslatma islemi normal devam eder.

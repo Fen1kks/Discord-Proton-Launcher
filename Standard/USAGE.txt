@@ -1,4 +1,4 @@
-DISCORD PROTON LAUNCHER - STANDARD EDITION
+﻿DISCORD PROTON LAUNCHER - STANDARD EDITION
 ==========================================
 
 Automatically updates Discord's application path in Proton VPN split tunneling
@@ -95,3 +95,18 @@ IMPORTANT NOTES
 - Do not publish Proton VPN UserSettings*.json files, the
   DiscordVpnSyncBackups directory, or the logs directory. They may contain
   personal account and local path information.
+
+ROBLOX
+
+Both editions include `RobloxVpnSync.bat`. It selects the newest
+`RobloxPlayerBeta.exe` under `%LocalAppData%\Roblox\Versions` using numeric
+executable version metadata and adds or updates its Proton VPN entry. Split
+tunneling must be enabled in inverse mode (only listed applications use VPN).
+
+Run it after Roblox finishes updating, before joining a game. Use
+`RobloxVpnSync.bat -WhatIf` for a read-only check. It does not launch Roblox or
+watch for updates in the background. When a path changes, settings are backed up
+and the Proton client is restarted if it was running.
+
+Discord launchers also refresh an existing Roblox entry in Proton. An absent
+Roblox installation does not prevent Discord synchronization.

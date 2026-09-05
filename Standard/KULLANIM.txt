@@ -1,4 +1,4 @@
-DISCORD PROTON LAUNCHER - STANDARD EDITION
+﻿DISCORD PROTON LAUNCHER - STANDARD EDITION
 ==========================================
 
 Discord yeni bir app-* surum klasorune tasindiginda Proton VPN split tunneling
@@ -98,3 +98,18 @@ ONEMLI NOTLAR
 - Proton VPN UserSettings*.json dosyalarini, DiscordVpnSyncBackups klasorunu veya
   logs klasorunu internette paylasmayin. Kisisel hesap ve klasor bilgileri
   icerebilirler.
+
+ROBLOX
+
+Her iki paketteki `RobloxVpnSync.bat`, `%LocalAppData%\Roblox\Versions` altindaki
+RobloxPlayerBeta.exe dosyalarini sayisal surum bilgisine gore siralar ve en yeni
+surumu Proton VPN listesine ekler veya mevcut kaydi gunceller. Split tunneling
+etkin ve yalnizca listedeki uygulamalarin VPN kullanacagi modda olmalidir.
+
+Roblox guncellemesi bittikten sonra oyuna girmeden once bu dosyayi calistirin.
+Kontrol icin `RobloxVpnSync.bat -WhatIf` kullanin. Bu dosya Roblox'u baslatmaz ve
+arka planda guncelleme izlemez. Proton aciksa, yol degistiginde yeniden baslatilir;
+ayar degisikliginden once yedek alinir.
+
+Discord baslaticilari da Proton listesinde zaten bulunan Roblox kaydini gunceller.
+Roblox kurulu degilse Discord baslatma islemi normal devam eder.
