@@ -108,6 +108,25 @@ function Get-ExternalOutput {
     }
 }
 
+function Assert-RepositoryReady {
+    param([Parameter(Mandatory = $true)][string]$RepositoryPath)
+
+    foreach ($operation in @('rebase-merge', 'rebase-apply', 'MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'sequencer')) {
+        $operationPath = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', '--git-path', $operation) -WorkingDirectory $RepositoryPath
+        if (-not [IO.Path]::IsPathRooted($operationPath)) {
+            $operationPath = Join-Path $RepositoryPath $operationPath
+        }
+        if (Test-Path -LiteralPath $operationPath) {
+            throw "Equicord deposunda tamamlanmamis Git islemi var: $operation. Depoda git status ile durumu inceleyip islemi tamamlayin veya iptal edin; sonra launcher'i tekrar calistirin."
+        }
+    }
+
+    $conflicts = Get-ExternalOutput -Command 'git.exe' -Arguments @('diff', '--name-only', '--diff-filter=U') -WorkingDirectory $RepositoryPath
+    if (-not [string]::IsNullOrWhiteSpace($conflicts)) {
+        throw "Equicord deposunda cozulmemis dosya cakismalari var. Git cakismalarini cozup launcher'i tekrar calistirin."
+    }
+}
+
 function Save-LauncherConfig {
     param([Parameter(Mandatory = $true)]$Config)
 
@@ -395,6 +414,8 @@ try {
     Write-Host "Equicord repo: $repoPath"
     Write-Host "Upstream: $upstreamRemoteName/$upstreamBranchName ($upstreamUrl)"
 
+    Assert-RepositoryReady -RepositoryPath $repoPath
+
     $initialDiscord = Get-LatestDiscordApp
     Write-Host "Discord: $($initialDiscord.Version) - $($initialDiscord.DiscordExe)"
 
@@ -478,7 +499,12 @@ catch {
         Stop-Discord
     }
     Write-Host "`n[KRITIK HATA] $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "Discord guvenli olmayan veya eksik bir durumla otomatik baslatilmadi." -ForegroundColor Yellow
+    if ($discordManaged) {
+        Write-Host "Discord guvenli olmayan veya eksik bir durumla otomatik baslatilmadi." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "On kontrol basarisiz; Discord'a dokunulmadi." -ForegroundColor Yellow
+    }
 }
 finally {
     if ($mutexAcquired -and $null -ne $mutex) {
