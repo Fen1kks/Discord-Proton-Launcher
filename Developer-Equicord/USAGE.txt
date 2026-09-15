@@ -131,3 +131,9 @@ and the Proton client is restarted if it was running.
 
 Discord launchers also refresh an existing Roblox entry in Proton. An absent
 Roblox installation does not prevent Discord synchronization.
+
+AUTOMATIC UPDATES (1.1.0+)
+BAT/VBS entry points check stable releases once a day. Network failures keep the current version. Settings, logs and shortcuts are preserved. -CheckOnly / -WhatIf and direct PS1 execution skip updates. Keep the original installation files; active updates live under .updates. Existing users must download this package once.
+
+MANUAL UPDATE
+Double-click GuncellemeleriDenetle.bat to check immediately, bypass the daily interval and install an available update. The result stays visible. Discord and Roblox are not launched. You can create a desktop shortcut to this file.

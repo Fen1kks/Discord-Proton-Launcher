@@ -3,7 +3,7 @@ setlocal
 title Discord VPN Sync
 color 0B
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0DiscordLauncher.ps1" %*
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0LauncherBootstrap.ps1" -Target DiscordLauncher.ps1 %*
 set "LAUNCHER_EXIT=%ERRORLEVEL%"
 
 if not "%LAUNCHER_EXIT%"=="0" (

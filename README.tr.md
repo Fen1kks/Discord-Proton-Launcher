@@ -1,5 +1,9 @@
 # Discord Proton Launcher
 
+[![Sürüm indirmeleri](https://img.shields.io/github/downloads/Fen1kks/Discord-Proton-Launcher/total?label=indirme)](https://github.com/Fen1kks/Discord-Proton-Launcher/releases)
+
+Sayaç, sürüm dosyalarının indirilme sayısını gösterir; tekrar indirmeler ve otomatik güncellemeler dahildir. Tekil kullanıcı sayısı değildir.
+
 Discord yeni bir sürümlü `app-*` klasörüne taşındığında Proton VPN split tunneling
 uygulama yolunu otomatik eşleyen, resmi olmayan bir Windows başlatıcısıdır.
 Her iki paket ayrıca Roblox güncellemelerinden sonra isteğe bağlı VPN yolu
@@ -64,6 +68,14 @@ Yeni sürüm, `%LocalAppData%\Roblox\Versions` altındaki `RobloxPlayerBeta.exe`
 dosyalarının sayısal sürüm bilgisi karşılaştırılarak seçilir. Klasör adları sürüm
 sırasını belirtmez. Sürümler eşitse klasörün son değiştirilme tarihi kullanılır;
 oyuncu dosyası bulunmayan klasörler atlanır.
+
+## Otomatik başlatıcı güncellemeleri
+
+1.1.0 paketinden itibaren BAT/VBS ile açılışta günde bir kez kararlı sürüm
+kontrol edilir. Doğrulanmış yeni paket otomatik etkinleştirilir; ayarlar ve
+kısayollar korunur. İnternet veya indirme hatasında mevcut sürüm kullanılır.
+Eski kullanıcıların bu özelliği içeren paketi bir kez elle indirmesi gerekir.
+[Güncelleme davranışı ve sürüm yayınlama](./UPDATING.md).
 
 ## Gizlilik
 

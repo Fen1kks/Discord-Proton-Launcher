@@ -1,115 +1,121 @@
-﻿DISCORD PROTON LAUNCHER - STANDARD EDITION
+DISCORD PROTON LAUNCHER - STANDARD EDITION
 ==========================================
 
-Discord yeni bir app-* surum klasorune tasindiginda Proton VPN split tunneling
-uygulama yolunu otomatik olarak gunceller.
+Discord yeni bir app-* sürüm klasörüne taşındığında Proton VPN split tunneling
+uygulama yolunu otomatik olarak günceller.
 
-BU EDITION KIMLER ICIN?
+BU EDITION KİMLER İÇİN?
 - Normal Discord kullananlar.
-- Equicord kullanan fakat kaynak kodunu degistirmeyen/build etmeyenler.
+- Equicord kullanan fakat kaynak kodunu değiştirmeyen/build etmeyenler.
 
-Equicord'u yalnizca normal sekilde kullaniyorsaniz Equicord guncellemelerini
-Equicord zaten kendisi yonetir. Developer-Equicord edition'ina ihtiyaciniz yoktur.
+Equicord'u yalnızca normal şekilde kullanıyorsanız Equicord güncellemelerini
+Equicord zaten kendisi yönetir. Developer-Equicord edition'ına ihtiyacınız yoktur.
 
-GEREKSINIMLER
-- Windows'ta standart Discord kurulu olmali.
-- Proton VPN kurulu ve kullanici oturumu acik olmali.
-- Proton VPN > Split Tunneling etkin olmali.
-- "Only included apps go through VPN" / "Yalnizca eklenen uygulamalar VPN'den
-  gecsin" modu secili olmali.
-- Discord'un ana uygulama yolu Proton VPN uygulama listesine bir kez eklenmis
-  olmali. Update.exe degil, app-* klasorunun icindeki Discord.exe secilmelidir.
+GEREKSİNİMLER
+- Windows'ta standart Discord kurulu olmalı.
+- Proton VPN kurulu ve kullanıcı oturumu açık olmalı.
+- Proton VPN > Split Tunneling etkin olmalı.
+- "Only included apps go through VPN" / "Yalnızca eklenen uygulamalar VPN'den
+  geçsin" modu seçili olmalı.
+- Discord'un ana uygulama yolu Proton VPN uygulama listesine bir kez eklenmiş
+  olmalı. Update.exe değil, app-* klasörünün içindeki Discord.exe seçilmelidir.
 
-ILK PROTON VPN AYARI
-1. Proton VPN > Settings > Split Tunneling bolumunu acin.
-2. Split Tunneling'i etkinlestirin.
-3. "Only included apps go through VPN" secenegini secin.
-4. Uygulama ekleme dugmesiyle su anki ana Discord.exe dosyasini ekleyin:
+İLK PROTON VPN AYARI
+1. Proton VPN > Settings > Split Tunneling bölümünü açın.
+2. Split Tunneling'i etkinleştirin.
+3. "Only included apps go through VPN" seçeneğini seçin.
+4. Uygulama ekleme düğmesiyle şu anki ana Discord.exe dosyasını ekleyin:
 
    %LocalAppData%\Discord\app-*\Discord.exe
 
-Buradaki app-* klasorunun adi Discord surumune gore degisir. Ilk mevcut yolu
-elle eklemek gereklidir; sonraki surum degisikliklerini launcher otomatik izler.
-%LocalAppData%\Discord\Update.exe dosyasini ana uygulama yerine eklemeyin.
+Buradaki app-* klasörünün adı Discord sürümüne göre değişir. İlk mevcut yolu
+elle eklemek gereklidir; sonraki sürüm değişikliklerini launcher otomatik izler.
+%LocalAppData%\Discord\Update.exe dosyasını ana uygulama yerine eklemeyin.
 
-KURULUM VE ILK CALISTIRMA
-1. ZIP dosyasini, yazma izniniz olan kalici bir klasore cikarin.
-2. DiscordLauncher.bat dosyasina cift tiklayin.
-3. Kontroller tamamlandiktan sonra Discord acilir.
-4. Discord'u bundan sonra DiscordLauncher.bat veya DiscordBaslat.vbs ile acin.
+KURULUM VE İLK ÇALIŞTIRMA
+1. ZIP dosyasını, yazma izniniz olan kalıcı bir klasöre çıkarın.
+2. DiscordLauncher.bat dosyasına çift tıklayın.
+3. Kontroller tamamlandıktan sonra Discord açılır.
+4. Discord'u bundan sonra DiscordLauncher.bat veya DiscordBaslat.vbs ile açın.
 
-Ilk calistirmayi mutlaka BAT dosyasiyla yapin. BAT ilerlemeyi ve hatalari ekranda
-gosterir. Her sey calistiktan sonra pencere gormeden acmak icin
-DiscordBaslat.vbs dosyasini kullanabilirsiniz.
+İlk çalıştırmayı mutlaka BAT dosyasıyla yapın. BAT ilerlemeyi ve hataları ekranda
+gösterir. Her şey çalıştıktan sonra pencere görmeden açmak için
+DiscordBaslat.vbs dosyasını kullanabilirsiniz.
 
-Dosyalari yonetici olarak calistirmayin; Discord ve Proton'un kullanildigi normal
-Windows hesabi ile calistirin. Ilk kullanimda Windows veya guvenlik yazilimi betik
-icin uyari gosterebilir.
+Dosyaları yönetici olarak çalıştırmayın; Discord ve Proton'un kullanıldığı normal
+Windows hesabı ile çalıştırın. İlk kullanımda Windows veya güvenlik yazılımı betik
+için uyarı gösterebilir.
 
 YALNIZCA KONTROL
 DiscordLauncher.bat -CheckOnly
 
-Bu komut Discord kurulumunu ve Proton ayarlarini denetler; Discord'u veya Proton'u
-kapatmaz ve ayarlari degistirmez.
+Bu komut Discord kurulumunu ve Proton ayarlarını denetler; Discord'u veya Proton'u
+kapatmaz ve ayarları değiştirmez.
 
 LOG VE YEDEKLER
-- Ayrintili kayitlar paket klasorundeki logs klasorune yazilir.
-- Yalnizca en yeni 5 launcher logu saklanir.
-- Proton ayari degismeden once Proton ayar klasorundeki
-  DiscordVpnSyncBackups klasorune tarihli yedek alinir.
+- Ayrıntılı kayıtlar paket klasöründeki logs klasörüne yazılır.
+- Yalnızca en yeni 5 launcher logu saklanır.
+- Proton ayarı değişmeden önce Proton ayar klasöründeki
+  DiscordVpnSyncBackups klasörüne tarihli yedek alınır.
 
-Bir hata olursa pencereyi kapatmadan mesaji okuyun. VBS ile baslatirken hata
-gorurseniz BAT dosyasini dogrudan calistirin veya logs klasorundeki son kaydi acin.
+Bir hata olursa pencereyi kapatmadan mesajı okuyun. VBS ile başlatırken hata
+görürseniz BAT dosyasını doğrudan çalıştırın veya logs klasöründeki son kaydı açın.
 
-MASAUSTU KISAYOLU VE GOREV CUBUGUNA SABITLEME
-En sorunsuz yontem yeni bir kisayol olusturmaktir:
+MASAÜSTÜ KISAYOLU VE GÖREV ÇUBUĞUNA SABİTLEME
+En sorunsuz yöntem yeni bir kısayol oluşturmaktır:
 
-1. Masaustunde bos bir yere sag tiklayin ve Yeni > Kisayol secin.
-2. Konum alanina asagidaki satiri yazin. PAKETIN-TAM-YOLU kismini paketin
-   bilgisayarinizdaki gercek yoluyla degistirin:
+1. Masaüstünde boş bir yere sağ tıklayın ve Yeni > Kısayol seçin.
+2. Konum alanına aşağıdaki satırı yazın. PAKETİN-TAM-YOLU kısmını paketin
+   bilgisayarınızdaki gerçek yoluyla değiştirin:
 
-   C:\Windows\System32\wscript.exe "C:\PAKETIN-TAM-YOLU\DiscordBaslat.vbs"
+   C:\Windows\System32\wscript.exe "C:\PAKETİN-TAM-YOLU\DiscordBaslat.vbs"
 
-3. Kisayola Discord adini verin.
-4. Yeni kisayola sag tiklayip Ozellikler'i acin.
-5. "Baslangic yeri" alanina paket klasorunun tam yolunu yazin.
-6. Simge Degistir dugmesine basin ve simge kaynagi olarak sunu secin:
+3. Kısayola Discord adını verin.
+4. Yeni kısayola sağ tıklayıp Özellikler'i açın.
+5. "Başlangıç yeri" alanına paket klasörünün tam yolunu yazın.
+6. Simge Değiştir düğmesine basın ve simge kaynağı olarak şunu seçin:
 
    %LocalAppData%\Discord\Update.exe
 
-7. Uygula'ya basin. Ardindan kisayola sag tiklayip "Gorev cubuguna sabitle"
-   secenegini kullanin.
+7. Uygula'ya basın. Ardından kısayola sağ tıklayıp "Görev çubuğuna sabitle"
+   seçeneğini kullanın.
 
-MEVCUT SABIT DISCORD IKONUNU DEGISTIRME
-1. Discord'u kapatin.
-2. Gorev cubugundaki sabit Discord ikonuna Shift+sag tiklayip Ozellikler'i acin.
-3. Hedef alanini su bicimde degistirin:
+MEVCUT SABİT DISCORD İKONUNU DEĞİŞTİRME
+1. Discord'u kapatın.
+2. Görev çubuğundaki sabit Discord ikonuna Shift+sağ tıklayıp Özellikler'i açın.
+3. Hedef alanını şu biçimde değiştirin:
 
-   C:\Windows\System32\wscript.exe "C:\PAKETIN-TAM-YOLU\DiscordBaslat.vbs"
+   C:\Windows\System32\wscript.exe "C:\PAKETİN-TAM-YOLU\DiscordBaslat.vbs"
 
-4. "Baslangic yeri" alanini paket klasorunun tam yolu yapip Uygula'ya basin.
+4. "Başlangıç yeri" alanını paket klasörünün tam yolu yapıp Uygula'ya basın.
 
-Ozellikler secenegi gorunmezse mevcut ikonu gorev cubugundan kaldirin ve yukarida
-anlatilan masaustu kisayolunu olusturup yeniden sabitleyin.
+Özellikler seçeneği görünmezse mevcut ikonu görev çubuğundan kaldırın ve yukarıda
+anlatılan masaüstü kısayolunu oluşturup yeniden sabitleyin.
 
-ONEMLI NOTLAR
-- Paket klasorunu tasirsaniz kisayolun Hedef ve Baslangic yeri alanlarini da
-  yeni yola gore guncelleyin.
-- Proton VPN UserSettings*.json dosyalarini, DiscordVpnSyncBackups klasorunu veya
-  logs klasorunu internette paylasmayin. Kisisel hesap ve klasor bilgileri
-  icerebilirler.
+ÖNEMLİ NOTLAR
+- Paket klasörünü taşırsanız kısayolun Hedef ve Başlangıç yeri alanlarını da
+  yeni yola göre güncelleyin.
+- Proton VPN UserSettings*.json dosyalarını, DiscordVpnSyncBackups klasörünü veya
+  logs klasörünü internette paylaşmayın. Kişisel hesap ve klasör bilgileri
+  içerebilirler.
 
 ROBLOX
 
-Her iki paketteki `RobloxVpnSync.bat`, `%LocalAppData%\Roblox\Versions` altindaki
-RobloxPlayerBeta.exe dosyalarini sayisal surum bilgisine gore siralar ve en yeni
-surumu Proton VPN listesine ekler veya mevcut kaydi gunceller. Split tunneling
-etkin ve yalnizca listedeki uygulamalarin VPN kullanacagi modda olmalidir.
+Her iki paketteki `RobloxVpnSync.bat`, `%LocalAppData%\Roblox\Versions` altındaki
+RobloxPlayerBeta.exe dosyalarını sayısal sürüm bilgisine göre sıralar ve en yeni
+sürümü Proton VPN listesine ekler veya mevcut kaydı günceller. Split tunneling
+etkin ve yalnızca listedeki uygulamaların VPN kullanacağı modda olmalıdır.
 
-Roblox guncellemesi bittikten sonra oyuna girmeden once bu dosyayi calistirin.
-Kontrol icin `RobloxVpnSync.bat -WhatIf` kullanin. Bu dosya Roblox'u baslatmaz ve
-arka planda guncelleme izlemez. Proton aciksa, yol degistiginde yeniden baslatilir;
-ayar degisikliginden once yedek alinir.
+Roblox güncellemesi bittikten sonra oyuna girmeden önce bu dosyayı çalıştırın.
+Kontrol için `RobloxVpnSync.bat -WhatIf` kullanın. Bu dosya Roblox'u başlatmaz ve
+arka planda güncelleme izlemez. Proton açıksa, yol değiştiğinde yeniden başlatılır;
+ayar değişikliğinden önce yedek alınır.
 
-Discord baslaticilari da Proton listesinde zaten bulunan Roblox kaydini gunceller.
-Roblox kurulu degilse Discord baslatma islemi normal devam eder.
+Discord başlatıcıları da Proton listesinde zaten bulunan Roblox kaydını günceller.
+Roblox kurulu değilse Discord başlatma işlemi normal devam eder.
+
+OTOMATİK GÜNCELLEME (1.1.0+)
+BAT/VBS girişleri günde bir kez kararlı sürüm kontrol eder. İnternet hatasında mevcut sürüm kullanılır. Ayarlar, loglar ve kısayollar korunur. -CheckOnly / -WhatIf ve doğrudan PS1 çalıştırma güncellemeyi atlar. İlk kurulum dosyalarını silmeyin; etkin sürüm .updates altındadır. Eski kullanıcılar bu paketi bir kez elle indirmelidir.
+
+MANUEL GÜNCELLEME
+GuncellemeleriDenetle.bat dosyasına çift tıklayın. Günlük bekleme süresini atlayarak hemen kontrol eder, varsa güncellemeyi kurar ve sonucu gösterir. Discord veya Roblox açılmaz. Masaüstüne bu dosyanın kısayolunu koyabilirsiniz.

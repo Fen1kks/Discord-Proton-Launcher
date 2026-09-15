@@ -3,6 +3,7 @@
 **/backups/
 **/launcher-state.json
 **/launcher-config.json
+**/.updates/
 
 # Proton VPN settings and backups must never be committed
 **/UserSettings*.json

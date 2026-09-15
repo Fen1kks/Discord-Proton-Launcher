@@ -3,7 +3,7 @@ setlocal
 title Equicord Launcher ^& VPN Sync
 color 0B
 
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0EquicordLauncher.ps1" %*
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0LauncherBootstrap.ps1" -Target EquicordLauncher.ps1 %*
 set "LAUNCHER_EXIT=%ERRORLEVEL%"
 
 if not "%LAUNCHER_EXIT%"=="0" (

@@ -8,7 +8,8 @@ $ErrorActionPreference = 'Stop'
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $vpnScriptPath = Join-Path $scriptRoot 'vpn_sync.ps1'
-$logDirectory = Join-Path $scriptRoot 'logs'
+$dataRoot = if ($env:DISCORD_PROTON_DATA_ROOT) { $env:DISCORD_PROTON_DATA_ROOT } else { $scriptRoot }
+$logDirectory = Join-Path $dataRoot 'logs'
 $mutex = $null
 $mutexAcquired = $false
 $transcriptStarted = $false

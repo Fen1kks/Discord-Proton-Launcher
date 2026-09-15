@@ -1,5 +1,9 @@
 # Discord Proton Launcher
 
+[![Release downloads](https://img.shields.io/github/downloads/Fen1kks/Discord-Proton-Launcher/total?label=downloads)](https://github.com/Fen1kks/Discord-Proton-Launcher/releases)
+
+The counter shows release asset downloads, including repeat downloads and automatic updates; it is not a unique user count.
+
 An unofficial Windows launcher that keeps Discord's Proton VPN split-tunneling
 application path synchronized when Discord moves to a new versioned `app-*`
 directory. Both editions also support optional Roblox path synchronization after
@@ -87,3 +91,7 @@ The scripts run locally and do not upload account data. Never attach Proton VPN
 `UserSettings*.json` files or their backups to a GitHub issue: these files may
 contain account and connection information. Logs can contain local Windows paths
 and usernames, so redact them before sharing.
+
+## Automatic launcher updates
+
+Starting with 1.1.0, BAT/VBS launchers check for stable releases once a day and activate verified updates while preserving settings and shortcuts. Existing users need to download the updater-enabled package once. See [update behavior and publishing](./UPDATING.md).

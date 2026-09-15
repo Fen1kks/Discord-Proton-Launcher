@@ -1,0 +1,27 @@
+name: Release launcher
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test and package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($test in Get-ChildItem tests/*.Tests.ps1) {
+            & powershell.exe -NoProfile -File $test.FullName
+            if ($LASTEXITCODE -ne 0) { throw "Failed: $test" }
+          }
+          ./scripts/Build-Release.ps1 -Version $env:GITHUB_REF_NAME
+      - name: Create draft release
+        shell: powershell
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME ./dist/*.zip ./dist/*.sha256 --draft --verify-tag --title $env:GITHUB_REF_NAME --notes-file RELEASE_NOTES.md
+          if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }

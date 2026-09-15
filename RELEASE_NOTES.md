@@ -1,25 +1,23 @@
-# Git preflight fix / Git ön kontrol düzeltmesi
+# v1.1.0 - Automatic launcher updates
 
 ## Türkçe
 
-Developer-Equicord başlatıcısı artık yarım kalmış Git işlemlerini Discord'u kapatmadan önce tespit eder.
-
-- Devam eden rebase, merge, cherry-pick ve revert işlemleri ile çözülmemiş dosya çakışmaları ön kontrolde bildirilir.
-- Böyle bir durumda yeni bir rebase başlatılmaz; mevcut Git işlemi ve açık Discord oturumu korunur. Kullanıcıya işlemi tamamlayıp veya iptal edip yeniden denemesi gerektiği açıklanır.
-- `EquicordLauncher.bat -CheckOnly` aynı Git kontrollerini de çalıştırır.
-- Git ön kontrolü için otomatik testler eklendi. Her iki pakette Discord sürüm seçimi, Proton kaydı güncelleme, tekrar eşitleme, ilk kayıt ve yedekli atomik kaydetme testleri eklendi.
-- Standard paketin çalışma davranışı değişmedi. Discord ve Roblox testleri Windows PowerShell 5.1 ile her iki paket için geçti.
-
-Bu sürüm yarım kalmış Git işlemlerini otomatik tamamlamaz, iptal etmez veya Git işlem dosyalarını silmez.
+- Standard, Developer-Equicord ve Roblox BAT/VBS girişlerine günlük otomatik güncelleme eklendi.
+- `GuncellemeleriDenetle.bat` ile beklemeden manuel güncelleme yapılabilir; Discord açılmaz.
+- Türkçe kullanım metinleri ve güncelleme mesajları düzeltildi; Windows PowerShell için Türkçe karakter kodlaması korundu.
+- Kararlı GitHub paketleri SHA-256, sürüm, paket türü ve dosya kontrollerinden sonra ayrı klasörde etkinleştirilir.
+- Kişisel ayarlar, loglar ve kısayollar korunur. İnternet veya paket doğrulama hatasında mevcut sürüm kullanılır.
+- -CheckOnly ve -WhatIf güncelleme yapmaz. Git kaynak kopyaları otomatik güncellenmez.
+- Sürüm etiketiyle test edilen paketleri içeren taslak GitHub release hazırlanır; yayınlama ayrı adımdır.
+- Eski kullanıcıların bu paketi bir kez elle indirmesi gerekir.
 
 ## English
 
-The Developer-Equicord launcher now detects unfinished Git operations before closing Discord.
-
-- Preflight checks report pending rebases, merges, cherry-picks, reverts, and unresolved file conflicts.
-- When a pending operation is found, no new rebase starts. The existing Git operation and running Discord session are preserved, with guidance to finish or abort the operation before retrying.
-- `EquicordLauncher.bat -CheckOnly` now runs the same Git checks.
-- Added automated Git preflight tests, plus Discord version selection, Proton entry migration, repeated synchronization, first-time entry, and atomic save with backup tests for both editions.
-- Standard runtime behavior is unchanged. Discord and Roblox tests passed for both editions on Windows PowerShell 5.1.
-
-This release does not automatically continue or abort unfinished Git operations, or delete Git operation files.
+- Daily automatic updates for Standard, Developer-Equicord and Roblox BAT/VBS entry points.
+- Use `GuncellemeleriDenetle.bat` to check and install updates immediately without launching Discord.
+- Corrected Turkish documentation and update messages, preserving encoding for Windows PowerShell.
+- Stable GitHub packages are checked for SHA-256 integrity, edition, version and expected files before atomic activation in a separate directory.
+- Personal settings, logs and shortcuts remain in place. Network or validation failures keep the current release.
+- CheckOnly/WhatIf and Git source checkouts skip updates.
+- Tagged releases build tested packages into a draft GitHub release for review and publication.
+- Existing users must download this updater-enabled package once.
