@@ -15,6 +15,7 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
         $script:discordCandidates = @(
             [pscustomobject]@{ Name = 'app-1.0.9'; FullName = 'C:\TestDiscord\app-1.0.9'; LastWriteTimeUtc = [datetime]'2026-09-06' },
             [pscustomobject]@{ Name = 'app-1.0.10'; FullName = 'C:\TestDiscord\app-1.0.10'; LastWriteTimeUtc = [datetime]'2026-09-01' },
+            [pscustomobject]@{ Name = 'app-1.0.11'; FullName = 'C:\TestDiscord\app-1.0.11'; LastWriteTimeUtc = [datetime]'2026-09-02' },
             [pscustomobject]@{ Name = 'app-9.0.0'; FullName = 'C:\TestDiscord\app-9.0.0'; LastWriteTimeUtc = [datetime]'2026-09-06' }
         )
         function Get-ChildItem {
@@ -23,10 +24,12 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
         }
         function Test-Path {
             param($LiteralPath, $PathType)
-            return $LiteralPath -ne 'C:\TestDiscord\app-9.0.0\Discord.exe'
+            if ($LiteralPath -eq 'C:\TestDiscord\app-9.0.0\Discord.exe') { return $false }
+            if ($LiteralPath -like 'C:\TestDiscord\app-1.0.11\resources\*') { return $false }
+            return $true
         }
         if ((Get-LatestDiscordExecutable) -ne 'C:\TestDiscord\app-1.0.10\Discord.exe') {
-            throw 'Discord selection must sort numeric versions, ignore folder recency, and skip missing executables.'
+            throw 'Discord selection must sort numeric versions, ignore folder recency, and skip missing executables or incomplete installations.'
         }
         $script:discordCandidates = @()
         $rejected = $false

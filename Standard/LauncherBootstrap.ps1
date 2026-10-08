@@ -8,12 +8,49 @@ $ErrorActionPreference = 'Stop'
 $forwardArguments = @($args)
 $root = $PSScriptRoot
 $readOnly = @($forwardArguments | Where-Object { $_ -match '^-(CheckOnly|WhatIf)(:.*)?$' }).Count -gt 0
+function Show-LauncherFailureDialog {
+    param(
+        [Parameter(Mandatory = $true)][string]$Title,
+        [Parameter(Mandatory = $true)][string]$Message,
+        [string]$LogPath = $null
+    )
+
+    if ($env:DISCORD_LAUNCHER_NO_DIALOG -or $env:CI) { return }
+
+    $dialogText = "Baslatici bir hata nedeniyle tamamlanamadi:`n`n$Message"
+    $hasLog = ($LogPath -and (Test-Path -LiteralPath $LogPath -PathType Leaf))
+    if ($hasLog) {
+        $dialogText += "`n`nAyrintili hata gunlugunu (log) Not Defteri ile acmak ister misiniz?"
+    }
+
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $buttons = if ($hasLog) { [System.Windows.Forms.MessageBoxButtons]::YesNo } else { [System.Windows.Forms.MessageBoxButtons]::OK }
+        $result = [System.Windows.Forms.MessageBox]::Show($dialogText, $Title, $buttons, [System.Windows.Forms.MessageBoxIcon]::Error)
+        if ($result -eq [System.Windows.Forms.DialogResult]::Yes -and $hasLog) {
+            Start-Process -FilePath 'notepad.exe' -ArgumentList $LogPath
+        }
+    }
+    catch {
+        try {
+            $wshell = New-Object -ComObject WScript.Shell
+            $btnType = if ($hasLog) { 4 } else { 0 }
+            $res = $wshell.Popup($dialogText, 0, $Title, $btnType + 16)
+            if ($res -eq 6 -and $hasLog) {
+                Start-Process -FilePath 'notepad.exe' -ArgumentList $LogPath
+            }
+        }
+        catch { }
+    }
+}
+
 $sha = [Security.Cryptography.SHA256]::Create()
 try { $key = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($root.ToLowerInvariant()))).Replace('-', '') }
 finally { $sha.Dispose() }
 $mutex = New-Object Threading.Mutex($false, "Local\DiscordProtonUpdate-$key")
 $locked = $false
 $code = 1
+$bootstrapFailure = $null
 try {
     if (-not $UpdateOnly -and -not $Target) { throw 'Başlatılacak uygulama belirtilmedi.' }
     if ($UpdateOnly -and $forwardArguments.Count) { throw 'Manuel güncelleme ek başlatma parametresi kabul etmez.' }
@@ -56,9 +93,26 @@ try {
         $code = $LASTEXITCODE
     }
 }
-catch { Write-Host "[HATA] $_" -ForegroundColor Red }
+catch {
+    $bootstrapFailure = $_
+    Write-Host "[HATA] $_" -ForegroundColor Red
+}
 finally {
     if ($locked) { $mutex.ReleaseMutex() }
     $mutex.Dispose()
+    if ($bootstrapFailure -and -not $readOnly -and -not $env:DISCORD_LAUNCHER_NO_DIALOG -and -not $env:CI) {
+        $logDir = Join-Path $root 'logs'
+        $bootstrapLog = $null
+        try {
+            if (-not (Test-Path -LiteralPath $logDir -PathType Container)) {
+                New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+            }
+            $bootstrapLog = Join-Path $logDir ("launcher-{0}.log" -f (Get-Date -Format 'yyyyMMdd-HHmmssfff'))
+            $logContent = "[{0}] [HATA]`r`n{1}`r`n`r`nAyrintilar:`r`n{2}" -f (Get-Date -Format 'yyyy-MM-dd HH:mm:ss'), $bootstrapFailure.Exception.Message, $bootstrapFailure.ScriptStackTrace
+            [IO.File]::WriteAllText($bootstrapLog, $logContent, [Text.Encoding]::UTF8)
+        }
+        catch { }
+        Show-LauncherFailureDialog -Title 'Launcher - Hata' -Message $bootstrapFailure.Exception.Message -LogPath $bootstrapLog
+    }
 }
 exit $code

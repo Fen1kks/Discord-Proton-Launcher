@@ -15,6 +15,57 @@ $mutexAcquired = $false
 $transcriptStarted = $false
 $discordManaged = $false
 $exitCode = 0
+$failureMessage = $null
+$logPath = $null
+
+function Show-LauncherFailureDialog {
+    param(
+        [Parameter(Mandatory = $true)][string]$Title,
+        [Parameter(Mandatory = $true)][string]$Message,
+        [string]$LogPath = $null
+    )
+
+    if ($env:DISCORD_LAUNCHER_NO_DIALOG -or $env:CI) {
+        return
+    }
+
+    $dialogText = "Baslatici bir hata nedeniyle tamamlanamadi:`n`n$Message"
+    $hasLog = ($LogPath -and (Test-Path -LiteralPath $LogPath -PathType Leaf))
+    if ($hasLog) {
+        $dialogText += "`n`nAyrintili hata gunlugunu (log) Not Defteri ile acmak ister misiniz?"
+    }
+
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $buttons = if ($hasLog) {
+            [System.Windows.Forms.MessageBoxButtons]::YesNo
+        } else {
+            [System.Windows.Forms.MessageBoxButtons]::OK
+        }
+
+        $result = [System.Windows.Forms.MessageBox]::Show(
+            $dialogText,
+            $Title,
+            $buttons,
+            [System.Windows.Forms.MessageBoxIcon]::Error
+        )
+
+        if ($result -eq [System.Windows.Forms.DialogResult]::Yes -and $hasLog) {
+            Start-Process -FilePath 'notepad.exe' -ArgumentList $LogPath
+        }
+    }
+    catch {
+        try {
+            $wshell = New-Object -ComObject WScript.Shell
+            $btnType = if ($hasLog) { 4 } else { 0 }
+            $res = $wshell.Popup($dialogText, 0, $Title, $btnType + 16)
+            if ($res -eq 6 -and $hasLog) {
+                Start-Process -FilePath 'notepad.exe' -ArgumentList $LogPath
+            }
+        }
+        catch { }
+    }
+}
 
 function Write-Step {
     param([string]$Message)
@@ -75,6 +126,12 @@ function Get-LatestDiscordApp {
     $candidates = foreach ($directory in Get-ChildItem -LiteralPath $discordDirectory -Directory -Filter 'app-*' -ErrorAction SilentlyContinue) {
         $discordExe = Join-Path $directory.FullName 'Discord.exe'
         if (-not (Test-Path -LiteralPath $discordExe -PathType Leaf)) {
+            continue
+        }
+
+        $hasAsar = (Test-Path -LiteralPath (Join-Path $directory.FullName 'resources\app.asar')) -or
+            (Test-Path -LiteralPath (Join-Path $directory.FullName 'resources\_app.asar'))
+        if (-not $hasAsar) {
             continue
         }
 
@@ -202,6 +259,7 @@ try {
 }
 catch {
     $exitCode = 1
+    $failureMessage = $_.Exception.Message
     if ($discordManaged) {
         Stop-Discord
     }
@@ -219,6 +277,9 @@ finally {
         try { Stop-Transcript | Out-Null } catch { }
     }
     Limit-LauncherLogs -Maximum 5
+    if ($exitCode -ne 0 -and $failureMessage -and -not $CheckOnly -and -not $env:DISCORD_LAUNCHER_NO_DIALOG -and -not $env:CI) {
+        Show-LauncherFailureDialog -Title 'Discord Launcher - Hata' -Message $failureMessage -LogPath $logPath
+    }
 }
 
 exit $exitCode

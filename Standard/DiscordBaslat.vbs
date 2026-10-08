@@ -14,6 +14,7 @@ For index = 0 To WScript.Arguments.Count - 1
     command = command & " " & Chr(34) & argument & Chr(34)
 Next
 
+shell.Environment("PROCESS")("DISCORD_LAUNCHER_SILENT") = "1"
 shell.Run command, 0, False
 
 Set fileSystem = Nothing

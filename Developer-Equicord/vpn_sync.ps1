@@ -1,4 +1,4 @@
-﻿[CmdletBinding(SupportsShouldProcess = $true)]
+[CmdletBinding(SupportsShouldProcess = $true)]
 param(
     [string]$DiscordExePath,
     [switch]$RobloxOnly
@@ -12,6 +12,12 @@ function Get-LatestDiscordExecutable {
     $candidates = foreach ($directory in Get-ChildItem -LiteralPath $discordDirectory -Directory -Filter 'app-*' -ErrorAction SilentlyContinue) {
         $exePath = Join-Path $directory.FullName 'Discord.exe'
         if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+            continue
+        }
+
+        $hasAsar = (Test-Path -LiteralPath (Join-Path $directory.FullName 'resources\app.asar')) -or
+            (Test-Path -LiteralPath (Join-Path $directory.FullName 'resources\_app.asar'))
+        if (-not $hasAsar) {
             continue
         }
 

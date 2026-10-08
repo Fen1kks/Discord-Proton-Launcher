@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$env:DISCORD_LAUNCHER_NO_DIALOG = '1'
 $project = Split-Path $PSScriptRoot -Parent
 . (Join-Path $project 'Standard/LauncherUpdate.ps1')
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('launcher-update-test-' + [guid]::NewGuid().ToString('N'))

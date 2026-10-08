@@ -9,7 +9,7 @@ set "LAUNCHER_EXIT=%ERRORLEVEL%"
 if not "%LAUNCHER_EXIT%"=="0" (
     echo.
     echo [HATA] Discord baslatilamadi. Ayrintilar yukarida ve logs klasorunde.
-    pause
+    if not "%DISCORD_LAUNCHER_SILENT%"=="1" pause
 )
 
 exit /b %LAUNCHER_EXIT%
