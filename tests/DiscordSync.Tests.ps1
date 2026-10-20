@@ -114,9 +114,16 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
             $timedOut = $true
         }
         if (-not $timedOut -or -not (Test-Path -LiteralPath $markerPath)) { throw 'A stale tunnel must stop the launch and keep the reconnect pending.' }
+        [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T07:50:30.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Disconnected. | {}`r`n")
+        $warnings = @(Wait-ProtonReconnect -MarkerPath $markerPath -TimeoutSeconds 1 -GraceSeconds 1 3>&1)
+        if ($warnings.Count -ne 1 -or -not (Test-Path -LiteralPath $markerPath)) { throw 'A tunnel that stays down after the grace period must only warn and keep the reconnect pending.' }
         [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T08:00:00.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Connecting. | {}`r`n")
-        Wait-ProtonReconnect -MarkerPath $markerPath -TimeoutSeconds 1
+        $connecting = @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles))
+        if ((Get-ProtonReconnectState -Events $connecting -SinceUtc $changedUtc) -ne 'Connecting') { throw 'A tunnel that is still being built must not be treated as ready.' }
+        [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T08:00:03.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Connected. Connected to server US-MA#193 | {}`r`n")
+        Wait-ProtonReconnect -MarkerPath $markerPath -TimeoutSeconds 1 -GraceSeconds 30
         if (Test-Path -LiteralPath $markerPath) { throw 'A reconnect after the change must clear the pending marker.' }
+        if ((Find-ProtonMainWindow -ProcessId $PID) -ne [IntPtr]::Zero) { throw 'Only Proton main windows may be selected for closing.' }
     }
     finally {
         $env:DISCORD_LAUNCHER_NO_DIALOG = $previousNoDialog

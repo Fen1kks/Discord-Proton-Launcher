@@ -152,26 +152,102 @@ function Set-TargetEntries {
     return [pscustomobject]@{ Apps = @($Apps); Changed = $changed }
 }
 
+function Find-ProtonMainWindow {
+    param([Parameter(Mandatory = $true)][int]$ProcessId)
+
+    if (-not ('DiscordProtonWindowInterop' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class DiscordProtonWindowInterop {
+    private delegate bool EnumWindowsProc(IntPtr window, IntPtr parameter);
+    [DllImport("user32.dll")] private static extern bool EnumWindows(EnumWindowsProc callback, IntPtr parameter);
+    [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder text, int length);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder text, int length);
+    [DllImport("user32.dll")] private static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+
+    public static IntPtr FindMainWindow(uint processId) {
+        IntPtr found = IntPtr.Zero;
+        EnumWindows((window, parameter) => {
+            uint owner;
+            GetWindowThreadProcessId(window, out owner);
+            if (owner != processId) { return true; }
+            StringBuilder className = new StringBuilder(256);
+            StringBuilder title = new StringBuilder(256);
+            GetClassName(window, className, className.Capacity);
+            GetWindowText(window, title, title.Capacity);
+            // The tray window shares the class; only the main window ends the app.
+            if (className.ToString() == "WinUIDesktopWin32WindowClass" && title.ToString().StartsWith("Proton VPN") && !title.ToString().EndsWith("(tray)")) {
+                found = window;
+                return false;
+            }
+            return true;
+        }, IntPtr.Zero);
+        return found;
+    }
+
+    public static bool Close(IntPtr window) {
+        return PostMessage(window, 0x0010, IntPtr.Zero, IntPtr.Zero);
+    }
+}
+'@
+    }
+    return [DiscordProtonWindowInterop]::FindMainWindow([uint32]$ProcessId)
+}
+
+function Stop-ProtonProcesses {
+    $processes = @(Get-Process -Name @('ProtonVPN.Client', 'ProtonVPN') -ErrorAction SilentlyContinue)
+    if ($processes.Count -eq 0) {
+        return
+    }
+    $processes | Stop-Process -Force -ErrorAction SilentlyContinue
+    try { $processes | Wait-Process -Timeout 5 -ErrorAction Stop } catch { }
+    Start-Sleep -Milliseconds 750
+}
+
+function Close-ProtonTunnel {
+    # Proton only quits, stopping its service and tunnel, when started with
+    # -ExitAppOnClose; otherwise closing a window just hides it to the tray.
+    Stop-ProtonProcesses
+    Start-ProtonClient -ExitAppOnClose
+
+    $process = Get-Process -Name 'ProtonVPN.Client' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $window = [IntPtr]::Zero
+    $deadline = [DateTime]::UtcNow.AddSeconds(20)
+    while ($process -and $window -eq [IntPtr]::Zero -and [DateTime]::UtcNow -lt $deadline) {
+        Start-Sleep -Milliseconds 500
+        $window = Find-ProtonMainWindow -ProcessId $process.Id
+    }
+    if ($window -eq [IntPtr]::Zero -or -not [DiscordProtonWindowInterop]::Close($window)) {
+        return $false
+    }
+    return $process.WaitForExit(20000)
+}
+
 function Stop-ProtonClient {
     $processes = @(Get-Process -Name @('ProtonVPN.Client', 'ProtonVPN') -ErrorAction SilentlyContinue)
     if ($processes.Count -eq 0) {
         return $false
     }
 
-    foreach ($process in $processes) {
-        try { $null = $process.CloseMainWindow() } catch { }
+    $tunnelClosed = $false
+    try { $tunnelClosed = Close-ProtonTunnel }
+    catch { Write-Verbose "Proton tuneli kapatilamadi: $($_.Exception.Message)" }
+    if ($tunnelClosed) {
+        Write-Host '[VPN] Proton VPN baglantisi yeni uygulama listesi icin kapatildi.'
     }
-    try { $processes | Wait-Process -Timeout 8 -ErrorAction Stop } catch { }
-
-    $remaining = @(Get-Process -Name @('ProtonVPN.Client', 'ProtonVPN') -ErrorAction SilentlyContinue)
-    if ($remaining.Count -gt 0) {
-        $remaining | Stop-Process -Force -ErrorAction SilentlyContinue
-        Start-Sleep -Milliseconds 750
+    else {
+        Write-Warning 'Proton VPN baglantisi otomatik kapatilamadi.'
+        Stop-ProtonProcesses
     }
     return $true
 }
 
 function Start-ProtonClient {
+    param([switch]$ExitAppOnClose)
+
     $candidates = @(
         (Join-Path $env:ProgramFiles 'Proton\VPN\ProtonVPN.Launcher.exe'),
         (Join-Path ${env:ProgramFiles(x86)} 'Proton\VPN\ProtonVPN.Launcher.exe'),
@@ -183,7 +259,15 @@ function Start-ProtonClient {
     if (-not $launcher) {
         throw 'Proton VPN yeniden baslaticisi bulunamadi.'
     }
-    Start-Process -FilePath $launcher -WindowStyle Hidden
+    if ($ExitAppOnClose) {
+        if ([System.IO.Path]::GetFileName($launcher) -ine 'ProtonVPN.Launcher.exe') {
+            throw 'Bu Proton VPN surumu duzgun kapatmayi desteklemiyor.'
+        }
+        Start-Process -FilePath $launcher -ArgumentList '-ExitAppOnClose' -WindowStyle Hidden
+    }
+    else {
+        Start-Process -FilePath $launcher -WindowStyle Hidden
+    }
 
     $deadline = [DateTime]::UtcNow.AddSeconds(20)
     while ([DateTime]::UtcNow -lt $deadline) {
@@ -241,8 +325,12 @@ function Get-ProtonReconnectState {
     # The service receives the split tunneling list only while connecting, so a
     # client restart that re-attaches to the running tunnel keeps the old list.
     if ($Events.Count -eq 0) { return 'Unknown' }
-    if (@($Events | Where-Object { $_.Status -eq 'Connecting' -and $_.TimeUtc -gt $SinceUtc }).Count -gt 0) { return 'Applied' }
-    if ($Events[-1].Status -ne 'Connected') { return 'Disconnected' }
+    $reconnected = @($Events | Where-Object { $_.Status -eq 'Connecting' -and $_.TimeUtc -gt $SinceUtc }).Count -gt 0
+    $latest = $Events[-1].Status
+    # Discord must not start until the rebuilt tunnel is up.
+    if ($reconnected -and $latest -eq 'Connected') { return 'Applied' }
+    if ($latest -eq 'Connecting') { return 'Connecting' }
+    if ($latest -ne 'Connected') { return 'Disconnected' }
     return 'Pending'
 }
 
@@ -291,7 +379,9 @@ function Confirm-ProtonReconnectDialog {
 function Wait-ProtonReconnect {
     param(
         [Parameter(Mandatory = $true)][string]$MarkerPath,
-        [int]$TimeoutSeconds = 180
+        [int]$TimeoutSeconds = 180,
+        # Time allowed for Proton's own auto-connect after a client restart.
+        [int]$GraceSeconds = 0
     )
 
     if (-not (Test-Path -LiteralPath $MarkerPath -PathType Leaf)) {
@@ -299,7 +389,12 @@ function Wait-ProtonReconnect {
     }
 
     $sinceUtc = (Get-Item -LiteralPath $MarkerPath).LastWriteTimeUtc
-    $state = Get-ProtonReconnectState -Events @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles)) -SinceUtc $sinceUtc
+    $graceDeadline = [DateTime]::UtcNow.AddSeconds($GraceSeconds)
+    while ($true) {
+        $state = Get-ProtonReconnectState -Events @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles)) -SinceUtc $sinceUtc
+        if ($state -eq 'Applied' -or $state -eq 'Unknown' -or [DateTime]::UtcNow -ge $graceDeadline) { break }
+        Start-Sleep -Seconds 1
+    }
     if ($state -eq 'Applied') {
         Remove-Item -LiteralPath $MarkerPath -Force
         Write-Host '[VPN] Proton VPN yeni uygulama listesiyle baglandi.' -ForegroundColor Green
@@ -459,4 +554,4 @@ finally {
     }
 }
 
-Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath
+Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath -GraceSeconds $(if ($protonWasRunning) { 30 } else { 0 })
