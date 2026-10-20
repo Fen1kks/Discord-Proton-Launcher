@@ -418,6 +418,48 @@ function Wait-ForDiscordExecutable {
     throw "Discord $TimeoutSeconds saniye icinde baslamadi."
 }
 
+function Assert-DiscordUpdaterReachable {
+    param(
+        [Parameter(Mandatory = $true)][DateTime]$SinceUtc,
+        [int]$TimeoutSeconds = 30,
+        [string]$LogPath = (Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'discord\logs\Discord_updater_rCURRENT.log')
+    )
+
+    # A running Discord.exe is not proof of a working route: when its traffic
+    # bypasses the tunnel, it stays on the splash screen retrying updates.
+    $pattern = '(?m)^\[(?<time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ [+-]\d{2}:\d{2})\] (?<level>[A-Z]+) (?<body>[^\r\n]*)'
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ([DateTime]::UtcNow -lt $deadline) {
+        $text = $null
+        if (Test-Path -LiteralPath $LogPath -PathType Leaf) {
+            try {
+                $stream = New-Object System.IO.FileStream($LogPath, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, ([System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete))
+                $reader = New-Object System.IO.StreamReader($stream)
+                try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
+            }
+            catch { }
+        }
+
+        if ($text) {
+            foreach ($match in [regex]::Matches($text, $pattern)) {
+                $time = [DateTimeOffset]::ParseExact($match.Groups['time'].Value, 'yyyy-MM-dd HH:mm:ss.FFFFFFF zzz', [System.Globalization.CultureInfo]::InvariantCulture)
+                if ($time.UtcDateTime -lt $SinceUtc) {
+                    continue
+                }
+                $body = $match.Groups['body'].Value
+                if ($body -match 'Update to latest complete') {
+                    return
+                }
+                if ($match.Groups['level'].Value -eq 'ERROR' -and $body -match 'Failed \d+:.*(hyper::Error\(Connect|ConnectionReset|ConnectionRefused|TimedOut)') {
+                    throw "Discord guncelleme sunucusuna ulasamadi; Discord trafigi Proton VPN tunelinden gecmiyor. Proton VPN'de baglantiyi kesip yeniden baglanin ve baslaticiyi tekrar calistirin."
+                }
+            }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    Write-Warning "Discord updater sonucu $TimeoutSeconds saniye icinde logda gorulmedi; VPN rotasi dogrulanamadi."
+}
+
 function Start-DiscordThroughUpdater {
     $updateExe = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Discord\Update.exe'
     if (-not (Test-Path -LiteralPath $updateExe -PathType Leaf)) {
@@ -530,6 +572,7 @@ try {
     Invoke-VpnSync -DiscordExePath $initialDiscord.DiscordExe
 
     Write-Step "Discord updater uzerinden baslatiliyor"
+    $launchStartedUtc = [DateTime]::UtcNow
     Start-DiscordThroughUpdater
     $actualDiscordExe = Wait-ForDiscordExecutable
     $actualDiscordDirectory = Split-Path -Parent $actualDiscordExe
@@ -541,9 +584,13 @@ try {
         Stop-Discord
         Repair-EquicordInjection -DiscordAppDirectory $actualDiscordDirectory
         Invoke-VpnSync -DiscordExePath $actualDiscordExe
+        $launchStartedUtc = [DateTime]::UtcNow
         Start-Process -FilePath $actualDiscordExe -WorkingDirectory $actualDiscordDirectory
         $null = Wait-ForDiscordExecutable -TimeoutSeconds 30
     }
+
+    Write-Step "Discord baglantisi dogrulaniyor"
+    Assert-DiscordUpdaterReachable -SinceUtc $launchStartedUtc
 
     $state = Get-LauncherState
     $state.LastDiscordExePath = $actualDiscordExe

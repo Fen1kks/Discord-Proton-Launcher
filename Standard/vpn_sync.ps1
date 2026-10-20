@@ -196,6 +196,165 @@ function Start-ProtonClient {
     throw 'Proton VPN istemcisi yeniden baslatilamadi.'
 }
 
+function Get-ProtonClientLogFiles {
+    $logDirectory = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Proton\Proton VPN\Logs'
+    return @(Get-ChildItem -LiteralPath $logDirectory -File -Filter 'client-logs*.txt' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+}
+
+function Read-SharedTextFile {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    # Proton keeps its log open for writing; a plain read would be refused.
+    $stream = New-Object System.IO.FileStream($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, ([System.IO.FileShare]::ReadWrite -bor [System.IO.FileShare]::Delete))
+    $reader = New-Object System.IO.StreamReader($stream)
+    try { return $reader.ReadToEnd() }
+    finally { $reader.Dispose() }
+}
+
+function Get-ProtonConnectionEvents {
+    param([AllowEmptyCollection()][string[]]$LogPaths)
+
+    $pattern = '(?m)^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z) \|.*\[CONNECTION_PROCESS\] Status updated to (?<status>[A-Za-z]+)'
+    $styles = [System.Globalization.DateTimeStyles]::AdjustToUniversal -bor [System.Globalization.DateTimeStyles]::AssumeUniversal
+    $events = foreach ($path in @($LogPaths)) {
+        try { $text = Read-SharedTextFile -Path $path }
+        catch {
+            Write-Verbose "Proton logu okunamadi: $path"
+            continue
+        }
+        foreach ($match in [regex]::Matches($text, $pattern)) {
+            [pscustomobject]@{
+                TimeUtc = [DateTime]::Parse($match.Groups['time'].Value, [System.Globalization.CultureInfo]::InvariantCulture, $styles)
+                Status = $match.Groups['status'].Value
+            }
+        }
+    }
+    return @($events | Sort-Object -Property TimeUtc)
+}
+
+function Get-ProtonReconnectState {
+    param(
+        [Parameter(Mandatory = $true)][AllowEmptyCollection()][object[]]$Events,
+        [Parameter(Mandatory = $true)][DateTime]$SinceUtc
+    )
+
+    # The service receives the split tunneling list only while connecting, so a
+    # client restart that re-attaches to the running tunnel keeps the old list.
+    if ($Events.Count -eq 0) { return 'Unknown' }
+    if (@($Events | Where-Object { $_.Status -eq 'Connecting' -and $_.TimeUtc -gt $SinceUtc }).Count -gt 0) { return 'Applied' }
+    if ($Events[-1].Status -ne 'Connected') { return 'Disconnected' }
+    return 'Pending'
+}
+
+function Get-ReconnectMarkerPath {
+    param([Parameter(Mandatory = $true)]$SettingsFile)
+    return Join-Path $SettingsFile.DirectoryName 'DiscordVpnSyncBackups\reconnect-pending.txt'
+}
+
+function Set-ProtonReconnectPending {
+    param(
+        [Parameter(Mandatory = $true)][string]$MarkerPath,
+        [Parameter(Mandatory = $true)][DateTime]$SettingsChangedUtc
+    )
+
+    # The marker's write time records when the settings changed.
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($MarkerPath, "Proton VPN yeniden baglanana kadar yeni split tunneling listesi uygulanmaz.`r`n", $utf8NoBom)
+    [System.IO.File]::SetLastWriteTimeUtc($MarkerPath, $SettingsChangedUtc)
+}
+
+function Confirm-ProtonReconnectDialog {
+    param([Parameter(Mandatory = $true)][string]$Message)
+
+    if ($env:DISCORD_LAUNCHER_NO_DIALOG -or $env:CI) { return $null }
+
+    $title = 'Proton VPN - Yeniden baglanin'
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $result = [System.Windows.Forms.MessageBox]::Show(
+            $Message,
+            $title,
+            [System.Windows.Forms.MessageBoxButtons]::OKCancel,
+            [System.Windows.Forms.MessageBoxIcon]::Warning
+        )
+        return ($result -eq [System.Windows.Forms.DialogResult]::OK)
+    }
+    catch {
+        try {
+            $wshell = New-Object -ComObject WScript.Shell
+            return ($wshell.Popup($Message, 0, $title, 1 + 48) -eq 1)
+        }
+        catch { return $null }
+    }
+}
+
+function Wait-ProtonReconnect {
+    param(
+        [Parameter(Mandatory = $true)][string]$MarkerPath,
+        [int]$TimeoutSeconds = 180
+    )
+
+    if (-not (Test-Path -LiteralPath $MarkerPath -PathType Leaf)) {
+        return
+    }
+
+    $sinceUtc = (Get-Item -LiteralPath $MarkerPath).LastWriteTimeUtc
+    $state = Get-ProtonReconnectState -Events @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles)) -SinceUtc $sinceUtc
+    if ($state -eq 'Applied') {
+        Remove-Item -LiteralPath $MarkerPath -Force
+        Write-Host '[VPN] Proton VPN yeni uygulama listesiyle baglandi.' -ForegroundColor Green
+        return
+    }
+    if ($state -eq 'Disconnected') {
+        Write-Warning 'Proton VPN bagli degil; yeni uygulama listesi bir sonraki baglantida uygulanacak.'
+        return
+    }
+    if ($WhatIfPreference) {
+        Write-Warning 'Proton VPN ayari degisti ancak baglanti henuz yeniden kurulmadi.'
+        return
+    }
+
+    Write-Host '[VPN] Mevcut Proton VPN baglantisi eski uygulama listesini kullaniyor.' -ForegroundColor Yellow
+    Write-Host '      Proton VPN uygulamasinda baglantiyi kesip yeniden baglanin.' -ForegroundColor Yellow
+    $instructions = "Proton VPN split tunneling listesi guncellendi, ancak acik VPN baglantisi eski listeyi kullanmaya devam ediyor.`n`nProton VPN uygulamasinda baglantiyi kesip yeniden baglanin, ardindan Tamam'a basin."
+    $message = $instructions
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while ($true) {
+        $confirmed = Confirm-ProtonReconnectDialog -Message $message
+        if ($confirmed -eq $false) {
+            throw 'Proton VPN yeniden baglantisi iptal edildi; Discord eski VPN rotasiyla baslatilmadi.'
+        }
+
+        # Without a dialog, poll until the deadline; after a confirmation, give the reconnect a moment to reach the log.
+        $pollUntil = if ($null -eq $confirmed) { $deadline } else { [DateTime]::UtcNow.AddSeconds(15) }
+        do {
+            $state = Get-ProtonReconnectState -Events @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles)) -SinceUtc $sinceUtc
+            if ($state -eq 'Applied' -or $state -eq 'Unknown') { break }
+            Start-Sleep -Seconds 1
+        } while ([DateTime]::UtcNow -lt $pollUntil)
+
+        if ($state -eq 'Applied') {
+            Remove-Item -LiteralPath $MarkerPath -Force
+            Write-Host '[VPN] Proton VPN yeni uygulama listesiyle yeniden baglandi.' -ForegroundColor Green
+            return
+        }
+        if ($state -eq 'Unknown') {
+            if ($confirmed) {
+                Remove-Item -LiteralPath $MarkerPath -Force
+                Write-Warning 'Proton logu okunamadi; yeniden baglanti kullanici onayiyla kabul edildi.'
+            }
+            else {
+                Write-Warning 'Proton logu okunamadi; yeniden baglanti dogrulanamadi.'
+            }
+            return
+        }
+        if ($null -eq $confirmed) {
+            throw "Proton VPN $TimeoutSeconds saniye icinde yeniden baglanmadi; Discord eski VPN rotasiyla baslatilmadi."
+        }
+        $message = "Yeniden baglanti henuz algilanamadi.`n`n$instructions"
+    }
+}
+
 function Write-SettingsAtomically {
     param(
         [Parameter(Mandatory = $true)]$SettingsFile,
@@ -261,9 +420,12 @@ if ($robloxExePath -and ($RobloxOnly -or $hasRobloxEntry)) {
     Write-Host "Roblox: $robloxExePath"
 }
 $update = Set-TargetEntries -Apps $settings.Apps -Paths $targetPaths
+$reconnectMarkerPath = Get-ReconnectMarkerPath -SettingsFile $settingsFile
 
 if (-not $update.Changed) {
     Write-Host "[STABIL] Proton VPN uygulama rotalari zaten guncel." -ForegroundColor Green
+    # An earlier run may have changed the file without the tunnel being rebuilt.
+    Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath
     return
 }
 
@@ -282,7 +444,9 @@ try {
     Assert-InverseSplitTunnelingMode -RootObject $settings.Root
     $update = Set-TargetEntries -Apps $settings.Apps -Paths $targetPaths
     if ($update.Changed) {
+        $settingsChangedUtc = [DateTime]::UtcNow
         $backupPath = Write-SettingsAtomically -SettingsFile $settingsFile -RootObject $settings.Root -Apps $update.Apps
+        Set-ProtonReconnectPending -MarkerPath $reconnectMarkerPath -SettingsChangedUtc $settingsChangedUtc
         Write-Host "[VPN] Ayar guncellendi. Yedek: $backupPath" -ForegroundColor Green
     }
     else {
@@ -294,3 +458,5 @@ finally {
         Start-ProtonClient
     }
 }
+
+Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath
