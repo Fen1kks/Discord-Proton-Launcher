@@ -15,6 +15,8 @@ try {
         $root = Join-Path $sandbox $edition
         $null = New-Item -ItemType Directory $root
         Copy-Item "$project/$edition/*" $root -Exclude logs
+        # Pin the installed version so the v1.1.1 fixture stays newer than the repo's release.json.
+        [IO.File]::WriteAllText((Join-Path $root 'release.json'), (@{Version='1.1.0';Edition=$edition;Protocol=1} | ConvertTo-Json))
         $launcher = if ($edition -eq 'Standard') { 'DiscordLauncher.ps1' } else { 'EquicordLauncher.ps1' }
         $originalLauncher = [IO.File]::ReadAllText((Join-Path $root $launcher))
         [IO.File]::WriteAllText((Join-Path $root $launcher), 'exit 0')
