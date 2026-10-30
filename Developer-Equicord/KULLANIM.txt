@@ -49,16 +49,20 @@ normal Windows hesabı ile çalıştırın.
 
 NE YAPAR?
 - upstream değişikliklerini fetch eder.
-- Kişisel commit'leri upstream branch üzerine --rebase-merges ve --autostash ile
-  yeniden uygular.
+- upstream branch'i kendi branch'inize --autostash ile merge eder. Geçmiş
+  yeniden yazılmaz, bu yüzden fork'unuzu GitHub'a güvenle push edebilirsiniz.
+- src/userplugins klasöründeki değişiklikleri de algılar (kendi Git reposu
+  varsa HEAD ve status, yoksa dosya tarihleri).
 - Son başarılı build değişmişse pnpm install --frozen-lockfile ve pnpm build
   çalıştırır.
 - Discord güncellemesinden sonra Equicord enjeksiyonunu kontrol edip onarır.
 - Proton VPN split tunneling Discord.exe yolunu günceller.
 - Discord'u başlatır.
 
-Launcher otomatik push yapmaz. Rebase sırasında conflict olursa durur; conflict'i
-Git ile elle çözmeden launcher'ı tekrar çalıştırmayın.
+Launcher otomatik push yapmaz. Merge sırasında conflict olursa merge geri alınır,
+Discord önceki kodla açılır ve bir uyarı gösterilir. Conflict'i depoda
+git merge upstream/main ile elle çözebilirsiniz. Upstream'e ulaşılamazsa da
+launcher mevcut kodla devam eder.
 
 AYAR DEĞİŞTİRME
 Repo yolu, remote veya branch değiştirmek için launcher-config.json dosyasını
@@ -68,7 +72,7 @@ YALNIZCA KONTROL
 EquicordLauncher.bat -CheckOnly
 
 Bu komut Git, pnpm, Equicord repo, Discord enjeksiyonu ve Proton ayarlarını
-denetler; fetch/rebase/build/inject yapmaz, Discord'u veya Proton'u kapatmaz ve
+denetler; fetch/merge/build/inject yapmaz, Discord'u veya Proton'u kapatmaz ve
 ayarları değiştirmez.
 
 LOG VE YEDEKLER

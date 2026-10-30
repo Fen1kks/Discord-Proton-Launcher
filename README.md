@@ -34,9 +34,9 @@ Use [`Developer-Equicord`](./Developer-Equicord) only if you:
 - modify Equicord source code;
 - maintain a personal Equicord fork;
 - build and inject Equicord from source; and
-- want to rebase your custom commits onto the upstream Equicord repository.
+- want to merge upstream Equicord changes into your custom commits.
 
-This edition adds configurable upstream fetch/rebase, dependency installation,
+This edition adds configurable upstream fetch/merge, dependency installation,
 build, injection repair, and the same Proton VPN path synchronization.
 
 > If you are unsure, use Standard.

@@ -9,7 +9,7 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
     $source = Join-Path $root $edition
     $meta = Get-Content -LiteralPath (Join-Path $source 'release.json') -Raw | ConvertFrom-Json
     if ((Read-ReleaseVersion $meta.Version) -ne $parsed -or $meta.Edition -cne $edition -or $meta.Protocol -ne 1) { throw "release.json does not match tag: $edition" }
-    foreach ($shared in @('LauncherBootstrap.ps1', 'LauncherUpdate.ps1')) {
+    foreach ($shared in @('LauncherBootstrap.ps1', 'LauncherUpdate.ps1', 'vpn_sync.ps1')) {
         if ((Get-FileHash (Join-Path $root "Standard/$shared")).Hash -ne (Get-FileHash (Join-Path $source $shared)).Hash) { throw "Shared file differs: $shared" }
     }
     $files = @(Get-ReleaseFiles $edition | ForEach-Object { Join-Path $source $_ })

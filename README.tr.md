@@ -35,9 +35,9 @@ seçin:
 - Equicord kaynak kodunu değiştiriyorsanız
 - Kendi Equicord fork'unuzu tutuyorsanız
 - Equicord'u kaynaktan build ve inject ediyorsanız
-- Kişisel commit'lerinizi upstream Equicord değişiklikleri üzerine taşıyorsanız
+- Upstream Equicord değişikliklerini kişisel commit'lerinize merge ediyorsanız
 
-Bu edition yapılandırılabilir upstream fetch/rebase, dependency kurulumu, build,
+Bu edition yapılandırılabilir upstream fetch/merge, dependency kurulumu, build,
 inject onarımı ve Proton VPN yol senkronizasyonunu birlikte yapar.
 
 > Emin değilseniz Standard edition'ı kullanın.

@@ -37,8 +37,11 @@ try {
         function Invoke-RestMethod { param($Uri,$Headers,$TimeoutSec) $script:requests++; if ($script:offline) { throw 'Offline' }; return $script:release }
         function Invoke-WebRequest { param($Uri,$Headers,$OutFile,$TimeoutSec,[switch]$UseBasicParsing) Copy-Item $script:fixtureZip $OutFile }
         [IO.File]::WriteAllText((Join-Path $root 'launcher-config.json'), '{"personal":"keep"}')
+        $stale = Join-Path $root ".updates/release-$('a' * 32)"
+        $null = New-Item -ItemType Directory $stale -Force
         $active = Invoke-LauncherUpdate -Root $root -Active $root
         Assert ($active -ne $root) 'New release was not activated.'
+        Assert (-not (Test-Path $stale)) 'Stale release was not removed.'
         Assert ((Get-Content (Join-Path $root 'launcher-config.json') -Raw) -eq '{"personal":"keep"}') 'Personal config changed.'
         Assert ((Get-Content (Join-Path $root 'release.json') -Raw | ConvertFrom-Json).Version -eq '1.1.0') 'Original install changed.'
         Assert ((Invoke-LauncherUpdate -Root $root -Active $active) -eq $active) 'Cached version changed.'

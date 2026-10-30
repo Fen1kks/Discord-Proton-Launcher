@@ -94,6 +94,11 @@ function Invoke-LauncherUpdate {
         Invoke-WebRequest -UseBasicParsing -Uri $expectedUrl -Headers $headers -OutFile $archive -TimeoutSec 30
         Expand-VerifiedRelease -Archive $archive -Digest $asset.digest -Destination $destination -Edition $meta.Edition -Version $version
         Set-ActiveRelease -Root $Root -Directory $id
+        $keep = @($id, (Split-Path $Active -Leaf))
+        foreach ($old in Get-ChildItem -LiteralPath $cache -Directory | Where-Object { $_.Name -match '^release-[a-f0-9]{32}$' -and $_.Name -notin $keep }) {
+            try { Remove-Item -LiteralPath $old.FullName -Recurse -Force -ErrorAction Stop }
+            catch { Write-Warning "Eski sürüm silinemedi: $($old.Name)" }
+        }
         if ($Force) { Write-Host "Güncelleme tamamlandı. Sürüm: $version" -ForegroundColor Green }
         return $destination
     }

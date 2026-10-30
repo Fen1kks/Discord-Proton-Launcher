@@ -109,14 +109,14 @@ function Set-AppEntry {
         [Parameter(Mandatory = $true)][string]$ExePath
     )
 
-    $matches = @($Apps | Where-Object {
+    $entries = @($Apps | Where-Object {
         $_.PSObject.Properties['AppFilePath'] -and
         [System.IO.Path]::GetFileName([string]$_.AppFilePath) -ieq [System.IO.Path]::GetFileName($ExePath)
     })
 
     $changed = $false
-    Write-Verbose ("Eslesen uygulama kaydi sayisi: {0}" -f $matches.Count)
-    if ($matches.Count -eq 0) {
+    Write-Verbose ("Eslesen uygulama kaydi sayisi: {0}" -f $entries.Count)
+    if ($entries.Count -eq 0) {
         $Apps += [pscustomobject]@{
             AppFilePath = $ExePath
             AlternateAppFilePaths = @()
@@ -125,7 +125,7 @@ function Set-AppEntry {
         $changed = $true
     }
     else {
-        foreach ($entry in $matches) {
+        foreach ($entry in $entries) {
             Write-Verbose ("Kayit karsilastirmasi: '{0}' -> '{1}', IsActive={2}" -f $entry.AppFilePath, $ExePath, $entry.IsActive)
             if (-not [string]::Equals([string]$entry.AppFilePath, $ExePath, [System.StringComparison]::OrdinalIgnoreCase)) {
                 $entry.AppFilePath = $ExePath
@@ -482,6 +482,14 @@ function Write-SettingsAtomically {
             Remove-Item -LiteralPath $temporaryPath -Force -ErrorAction SilentlyContinue
         }
     }
+
+    Get-ChildItem -LiteralPath $backupDirectory -File -Filter '*.bak' |
+        Sort-Object LastWriteTimeUtc, Name -Descending |
+        Select-Object -Skip 5 |
+        ForEach-Object {
+            try { Remove-Item -LiteralPath $_.FullName -Force -ErrorAction Stop }
+            catch { Write-Warning "Eski VPN yedegi silinemedi: $($_.Exception.Message)" }
+        }
 
     return $backupPath
 }

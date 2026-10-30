@@ -63,6 +63,12 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
         $saved = Read-ProtonSettings -SettingsFile $settingsFile
         if ($saved.Root.UnrelatedSetting -ne 'preserve' -or $saved.Apps.Count -ne 2 -or $saved.Apps[1].AppFilePath -ne $newPath) { throw 'Saved Discord settings did not round-trip correctly.' }
         if (@(Get-ChildItem -LiteralPath $testDirectory -Filter '*.tmp').Count -ne 0) { throw 'Atomic save left temporary files.' }
+        for ($i = 0; $i -lt 6; $i++) {
+            $settings = Read-ProtonSettings -SettingsFile (Get-Item -LiteralPath $settingsPath)
+            $latestBackup = Write-SettingsAtomically -SettingsFile (Get-Item -LiteralPath $settingsPath) -RootObject $settings.Root -Apps $result.Apps
+        }
+        $backups = @(Get-ChildItem -LiteralPath (Join-Path $testDirectory 'DiscordVpnSyncBackups') -Filter '*.bak')
+        if ($backups.Count -ne 5 -or -not (Test-Path -LiteralPath $latestBackup)) { throw 'VPN backups must be limited to the five newest.' }
     }
     finally {
         $resolvedTestDirectory = [IO.Path]::GetFullPath($testDirectory)

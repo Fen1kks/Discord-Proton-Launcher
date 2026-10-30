@@ -26,6 +26,7 @@ $discordManaged = $false
 $exitCode = 0
 $failureMessage = $null
 $logPath = $null
+$syncWarning = $null
 
 function Show-LauncherFailureDialog {
     param(
@@ -469,6 +470,68 @@ function Start-DiscordThroughUpdater {
     Start-Process -FilePath $updateExe -ArgumentList @('--processStart', 'Discord.exe') -WindowStyle Hidden
 }
 
+function Sync-Upstream {
+    $upstreamRef = "$upstreamRemoteName/$upstreamBranchName"
+    try {
+        Invoke-External -Command 'git.exe' -Arguments @('fetch', '--no-tags', '--prune', $upstreamRemoteName) -WorkingDirectory $repoPath | Out-Host
+    }
+    catch {
+        return "Upstream alinamadi; mevcut kodla devam edildi. ($($_.Exception.Message))"
+    }
+
+    try {
+        Invoke-External -Command 'git.exe' -Arguments @('merge', '--no-edit', '--autostash', $upstreamRef) -WorkingDirectory $repoPath | Out-Host
+        return $null
+    }
+    catch {
+        $mergeHead = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', '--git-path', 'MERGE_HEAD') -WorkingDirectory $repoPath
+        if (-not [IO.Path]::IsPathRooted($mergeHead)) {
+            $mergeHead = Join-Path $repoPath $mergeHead
+        }
+        if (Test-Path -LiteralPath $mergeHead) {
+            Invoke-External -Command 'git.exe' -Arguments @('merge', '--abort') -WorkingDirectory $repoPath | Out-Host
+        }
+        return "$upstreamRef birlestirilemedi (cakisma) ve geri alindi; Discord onceki kodla baslatildi. Depoda 'git merge $upstreamRef' ile cakismayi elle cozun."
+    }
+}
+
+function Get-UserPluginsState {
+    $userPluginsPath = Join-Path $repoPath 'src\userplugins'
+    if (-not (Test-Path -LiteralPath $userPluginsPath -PathType Container)) {
+        return $null
+    }
+
+    # src\userplugins is ignored by the Equicord repo, so its own repo or file times must feed the build check.
+    if (Test-Path -LiteralPath (Join-Path $userPluginsPath '.git')) {
+        return [pscustomobject]@{
+            Fingerprint = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', 'HEAD') -WorkingDirectory $userPluginsPath
+            Status = Get-ExternalOutput -Command 'git.exe' -Arguments @('status', '--porcelain=v1', '--untracked-files=all') -WorkingDirectory $userPluginsPath
+        }
+    }
+
+    $newest = Get-ChildItem -LiteralPath $userPluginsPath -File -Recurse -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTimeUtc -Descending |
+        Select-Object -First 1
+    return [pscustomobject]@{
+        Fingerprint = $(if ($newest) { "mtime:$($newest.LastWriteTimeUtc.Ticks)" } else { 'empty' })
+        Status = ''
+    }
+}
+
+function Show-LauncherWarningDialog {
+    param([Parameter(Mandatory = $true)][string]$Message)
+
+    if ($env:DISCORD_LAUNCHER_NO_DIALOG -or $env:CI) {
+        return
+    }
+    try {
+        $null = (New-Object -ComObject WScript.Shell).Popup($Message, 30, 'Equicord Launcher - Uyari', 48)
+    }
+    catch {
+        Write-Warning "Uyari penceresi gosterilemedi: $($_.Exception.Message)"
+    }
+}
+
 try {
     New-Item -ItemType Directory -Path $logDirectory -Force | Out-Null
     Limit-LauncherLogs -Maximum 5 -ReservedSlots 1
@@ -532,16 +595,22 @@ try {
     $discordManaged = $true
 
     Write-Step "Equicord upstream ile esleniyor"
-    Invoke-External -Command 'git.exe' -Arguments @('fetch', '--no-tags', '--prune', $upstreamRemoteName) -WorkingDirectory $repoPath
-    $upstreamRef = "$upstreamRemoteName/$upstreamBranchName"
-    Invoke-External -Command 'git.exe' -Arguments @('rebase', '--rebase-merges', '--autostash', $upstreamRef) -WorkingDirectory $repoPath
+    $syncWarning = Sync-Upstream
+    if ($syncWarning) {
+        Write-Warning $syncWarning
+    }
 
-    $head = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', 'HEAD') -WorkingDirectory $repoPath
+    $buildFingerprint = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', 'HEAD') -WorkingDirectory $repoPath
     $workingTreeStatus = Get-ExternalOutput -Command 'git.exe' -Arguments @('status', '--porcelain=v1', '--untracked-files=all') -WorkingDirectory $repoPath
+    $userPlugins = Get-UserPluginsState
+    if ($userPlugins) {
+        $buildFingerprint += "+userplugins:$($userPlugins.Fingerprint)"
+        $workingTreeStatus = ($workingTreeStatus + "`n" + $userPlugins.Status).Trim()
+    }
     $state = Get-LauncherState
     $patcherArtifact = Join-Path $repoPath 'dist\desktop\patcher.js'
     $needsBuild = $ForceBuild -or
-        ($state.LastSuccessfulBuildHead -ne $head) -or
+        ($state.LastSuccessfulBuildHead -ne $buildFingerprint) -or
         (-not [string]::IsNullOrWhiteSpace($workingTreeStatus)) -or
         (-not (Test-Path -LiteralPath $patcherArtifact -PathType Leaf))
 
@@ -555,7 +624,7 @@ try {
         if (-not (Test-Path -LiteralPath $patcherArtifact -PathType Leaf)) {
             throw "Build tamamlandi ancak patcher.js bulunamadi."
         }
-        $state.LastSuccessfulBuildHead = $head
+        $state.LastSuccessfulBuildHead = $buildFingerprint
         $state.LastSuccessfulBuildUtc = [DateTime]::UtcNow.ToString('o')
         Save-LauncherState -State $state
         Write-Host "Build basarili." -ForegroundColor Green
@@ -597,6 +666,9 @@ try {
     Save-LauncherState -State $state
 
     Write-Host "`n[TAMAM] Equicord ve VPN rotasi hazir." -ForegroundColor Green
+    if ($syncWarning) {
+        Show-LauncherWarningDialog -Message $syncWarning
+    }
 }
 catch {
     $exitCode = 1

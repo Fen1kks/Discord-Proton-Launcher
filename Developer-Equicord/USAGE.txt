@@ -49,16 +49,20 @@ account used by Discord, Proton VPN, and Git.
 
 WHAT DOES IT DO?
 - Fetches changes from the configured upstream repository.
-- Reapplies your personal commits on top of the upstream branch using
-  --rebase-merges and --autostash.
+- Merges the upstream branch into your branch with --autostash. History is never
+  rewritten, so your fork can be pushed to GitHub safely.
+- Detects changes in src/userplugins too (its own Git HEAD and status when it is
+  a repository, file times otherwise).
 - Runs pnpm install --frozen-lockfile and pnpm build when the last successful
   build no longer matches the current source.
 - Checks and repairs Equicord injection after Discord updates.
 - Updates Discord's Proton VPN split-tunneling path.
 - Starts Discord.
 
-The launcher never pushes automatically. If a rebase conflict occurs, it stops.
-Resolve the conflict manually with Git before running the launcher again.
+The launcher never pushes automatically. If the merge conflicts, it is aborted,
+Discord starts with the previous code, and a warning is shown. Resolve the
+conflict manually with git merge upstream/main. If upstream cannot be reached,
+the launcher also continues with the current code.
 
 CHANGE CONFIGURATION
 To change the repository path, remote, or branch, delete launcher-config.json
@@ -68,7 +72,7 @@ CHECK ONLY
 EquicordLauncher.bat -CheckOnly
 
 This checks Git, pnpm, the Equicord repository, Discord injection, and Proton VPN
-settings. It does not fetch, rebase, build, inject, close applications, or modify
+settings. It does not fetch, merge, build, inject, close applications, or modify
 Discord and Proton VPN settings.
 
 LOGS AND BACKUPS
