@@ -2,8 +2,6 @@
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
-# CI runners pipe UTF-8 with a BOM to native commands, which breaks git update-index --index-info.
-$OutputEncoding = New-Object Text.UTF8Encoding $false
 $tokens = $null
 $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($LauncherPath, [ref]$tokens, [ref]$errors)
@@ -43,7 +41,10 @@ try {
     }
     $blob = 'test' | & git.exe -C $testRepo hash-object -w --stdin
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create test blob.' }
-    "100644 $blob 1`tconflict.txt`n100644 $blob 2`tconflict.txt" | & git.exe -C $testRepo update-index --index-info
+    # Redirect a BOM-less file; Windows PowerShell pipes to native commands with a BOM on CI runners.
+    $indexInfo = Join-Path $testRepo 'index-info.txt'
+    [IO.File]::WriteAllText($indexInfo, "100644 $blob 1`tconflict.txt`n100644 $blob 2`tconflict.txt`n")
+    & cmd.exe /c "git -C `"$testRepo`" update-index --index-info < `"$indexInfo`""
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create unmerged test index.' }
     $rejected = $false
     try { Assert-RepositoryReady -RepositoryPath $testRepo }
