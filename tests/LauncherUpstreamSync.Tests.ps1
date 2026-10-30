@@ -2,6 +2,9 @@ param([string]$LauncherPath = (Join-Path (Split-Path $PSScriptRoot -Parent) 'Dev
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
+# Sync-Upstream's merge commits need an identity; CI runners have no global git config.
+$env:GIT_AUTHOR_NAME = $env:GIT_COMMITTER_NAME = 'test'
+$env:GIT_AUTHOR_EMAIL = $env:GIT_COMMITTER_EMAIL = 'test@example.com'
 $tokens = $null
 $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($LauncherPath, [ref]$tokens, [ref]$errors)
