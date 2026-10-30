@@ -2,6 +2,8 @@
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
+# CI runners pipe UTF-8 with a BOM to native commands, which breaks git update-index --index-info.
+$OutputEncoding = New-Object Text.UTF8Encoding $false
 $tokens = $null
 $errors = $null
 $ast = [Management.Automation.Language.Parser]::ParseFile($LauncherPath, [ref]$tokens, [ref]$errors)
