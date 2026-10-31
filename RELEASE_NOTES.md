@@ -1,21 +1,15 @@
-# v1.2.0 - Proton tunnel rebuild and safer Equicord sync
+# v1.2.1 - Fast-forward-only Equicord sync
 
 ## Türkçe
 
-- Split tunneling uygulama listesi değişince Proton tüneli otomatik yeniden kurulur; Discord yeni tünel bağlanmadan açılmaz. Otomatik kapatma başarısız olursa manuel yeniden bağlanma istemi gösterilir.
-- Discord güncellemesinden sonra yeni Discord.exe'nin VPN dışında kalması düzeltildi. Başlatıcı Discord güncelleyici logunu kontrol eder ve updates.discord.com'a ulaşılamıyorsa yeniden bağlanma yönergesiyle hata verir.
-- Eksik Discord kurulumları algılanır. VBS ile sessiz başlatmada oluşan hatalar artık iletişim kutusu ve log dosyasıyla bildirilir.
-- Developer-Equicord: upstream değişiklikleri rebase yerine `--autostash` ile merge edilir; yayımlanmış fork geçmişi yeniden yazılmaz. Çakışma veya fetch hatasında Discord önceki derlemeyle uyarıyla açılır.
-- Developer-Equicord: `src/userplugins` değişiklikleri artık yeniden derlemeyi tetikler.
-- Yalnızca son beş Proton ayar yedeği ile mevcut ve önceki güncelleme sürümü saklanır.
-- 1.1.0 kullanıcıları bu sürümü otomatik alır. Yeni hata iletişim kutusu kök BAT/VBS dosyalarına bağlı olduğundan yalnızca yeni ZIP'ten kurulumlarda görünür.
+- Developer-Equicord: Equicord deposu artık upstream'e yalnızca ileri sarılır (`--ff-only`), merge commit oluşturulmaz. Kendi eklentileriniz git tarafından yok sayılan `src/userplugins` klasöründe kaldığı için etkilenmez.
+- Depoda yerel commit varsa ileri sarma yapılmaz; Discord önceki derlemeyle uyarıyla açılır ve orijinale dönmek için `git reset --hard <upstream>` önerilir.
+- Standard sürümünde değişiklik yok; sürüm numarası iki sürümde ortak olduğu için 1.2.1'e yükseltildi.
+- 1.2.0 kullanıcıları bu sürümü otomatik alır.
 
 ## English
 
-- Changing the split tunneling app list now rebuilds the Proton tunnel automatically; Discord waits until the new tunnel is connected. A manual reconnect prompt remains the fallback.
-- Fixed the updated Discord.exe bypassing the VPN after a Discord update. The launcher checks the Discord updater log and fails with reconnect guidance when updates.discord.com is unreachable.
-- Incomplete Discord installations are detected. Silent VBS launches now report failures with a dialog and a log file.
-- Developer-Equicord: upstream changes are merged with `--autostash` instead of rebased, so published fork history is not rewritten. On a conflict or fetch failure Discord starts with the previous build and a warning.
-- Developer-Equicord: edits in `src/userplugins` now trigger a rebuild.
-- Only the five newest Proton settings backups and the current plus previous update release are kept.
-- 1.1.0 users receive this release automatically. The new failure dialog depends on the root BAT/VBS files, so it only appears for installs from the new ZIP.
+- Developer-Equicord: the Equicord repository is now only fast-forwarded to upstream (`--ff-only`); no merge commits are created. Your own plugins live in the git-ignored `src/userplugins` folder and are unaffected.
+- If the repository has local commits, the fast-forward is skipped; Discord starts with the previous build and a warning suggesting `git reset --hard <upstream>` to return to upstream.
+- No changes in the Standard edition; its version moves to 1.2.1 because both editions share one version number.
+- 1.2.0 users receive this release automatically.
