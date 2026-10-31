@@ -41,24 +41,18 @@ try {
     Invoke-Git $testRoot @('clone', '--quiet', '-o', 'upstream', $upstream, $repoPath)
 
     New-Commit $upstream 'upstream-only.txt' 'new upstream file'
-    New-Commit $repoPath 'fork-only.txt' 'fork change'
     [IO.File]::WriteAllText((Join-Path $repoPath 'uncommitted.txt'), 'keep me')
-    $forkHead = (& git.exe -C $repoPath rev-parse HEAD)
-    if (Sync-Upstream) { throw 'A clean merge must not warn.' }
-    $parents = @((& git.exe -C $repoPath rev-list --parents -n 1 HEAD) -split ' ')
-    if ($parents.Count -ne 3 -or $parents[1] -ne $forkHead) { throw 'A clean sync must merge upstream on top of the existing fork history.' }
-    if (-not (Test-Path -LiteralPath (Join-Path $repoPath 'upstream-only.txt'))) { throw 'Upstream changes were not merged.' }
+    if (Sync-Upstream) { throw 'A clean fast-forward must not warn.' }
+    if ((& git.exe -C $repoPath rev-parse HEAD) -ne (& git.exe -C $upstream rev-parse HEAD)) { throw 'A clean sync must leave the repo identical to upstream.' }
     if ([IO.File]::ReadAllText((Join-Path $repoPath 'uncommitted.txt')) -ne 'keep me') { throw 'Uncommitted files were not preserved.' }
 
     New-Commit $upstream 'shared.txt' 'upstream side'
     New-Commit $repoPath 'shared.txt' 'fork side'
     $headBefore = (& git.exe -C $repoPath rev-parse HEAD)
     $warning = Sync-Upstream
-    if (-not $warning -or $warning -notlike '*birlestirilemedi*') { throw 'A conflicting merge must return a warning.' }
-    if (Test-Path -LiteralPath (Join-Path $repoPath '.git/MERGE_HEAD')) { throw 'A conflicting merge must be aborted.' }
-    if ((& git.exe -C $repoPath rev-parse HEAD) -ne $headBefore) { throw 'An aborted merge must leave HEAD unchanged.' }
-    if ([IO.File]::ReadAllText((Join-Path $repoPath 'shared.txt')) -ne 'fork side') { throw 'An aborted merge must restore the fork files.' }
-    if ([IO.File]::ReadAllText((Join-Path $repoPath 'uncommitted.txt')) -ne 'keep me') { throw 'An aborted merge must restore uncommitted files.' }
+    if (-not $warning -or $warning -notlike '*ileri sarilamadi*') { throw 'A diverged repo must return a warning.' }
+    if ((& git.exe -C $repoPath rev-parse HEAD) -ne $headBefore) { throw 'A refused fast-forward must leave HEAD unchanged.' }
+    if ([IO.File]::ReadAllText((Join-Path $repoPath 'uncommitted.txt')) -ne 'keep me') { throw 'A refused fast-forward must keep uncommitted files.' }
 
     $upstreamRemoteName = 'missing'
     if ((Sync-Upstream) -notlike '*alinamadi*') { throw 'A failed fetch must return a warning instead of throwing.' }
@@ -76,7 +70,7 @@ try {
     [IO.File]::WriteAllText((Join-Path $userPlugins 'plugin.ts'), 'three')
     if (-not (Get-UserPluginsState).Status) { throw 'Uncommitted userplugins changes must be reported.' }
 
-    Write-Host 'Passed: clean merge, conflicting merge abort, fetch failure, preserved local files, and userplugins build inputs.'
+    Write-Host 'Passed: fast-forward, diverged repo refusal, fetch failure, preserved local files, and userplugins build inputs.'
 }
 finally {
     $resolved = [IO.Path]::GetFullPath($testRoot)

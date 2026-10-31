@@ -479,19 +479,13 @@ function Sync-Upstream {
         return "Upstream alinamadi; mevcut kodla devam edildi. ($($_.Exception.Message))"
     }
 
+    # Equicord stays pristine upstream; own plugins live in the ignored src\userplugins, so only fast-forward.
     try {
-        Invoke-External -Command 'git.exe' -Arguments @('merge', '--no-edit', '--autostash', $upstreamRef) -WorkingDirectory $repoPath | Out-Host
+        Invoke-External -Command 'git.exe' -Arguments @('merge', '--ff-only', '--autostash', $upstreamRef) -WorkingDirectory $repoPath | Out-Host
         return $null
     }
     catch {
-        $mergeHead = Get-ExternalOutput -Command 'git.exe' -Arguments @('rev-parse', '--git-path', 'MERGE_HEAD') -WorkingDirectory $repoPath
-        if (-not [IO.Path]::IsPathRooted($mergeHead)) {
-            $mergeHead = Join-Path $repoPath $mergeHead
-        }
-        if (Test-Path -LiteralPath $mergeHead) {
-            Invoke-External -Command 'git.exe' -Arguments @('merge', '--abort') -WorkingDirectory $repoPath | Out-Host
-        }
-        return "$upstreamRef birlestirilemedi (cakisma) ve geri alindi; Discord onceki kodla baslatildi. Depoda 'git merge $upstreamRef' ile cakismayi elle cozun."
+        return "$upstreamRef ileri sarilamadi (yerel commit var); Discord onceki kodla baslatildi. Equicord deposunda 'git reset --hard $upstreamRef' ile orijinale donun."
     }
 }
 
