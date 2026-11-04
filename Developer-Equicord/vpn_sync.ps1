@@ -400,7 +400,8 @@ function Wait-ProtonReconnect {
         Write-Host '[VPN] Proton VPN yeni uygulama listesiyle baglandi.' -ForegroundColor Green
         return
     }
-    if ($state -eq 'Disconnected') {
+    # A later Connected needs a new Connecting event, so that connection gets the new list.
+    if ($state -eq 'Disconnected' -or $state -eq 'Connecting') {
         Write-Warning 'Proton VPN bagli degil; yeni uygulama listesi bir sonraki baglantida uygulanacak.'
         return
     }
@@ -447,6 +448,34 @@ function Wait-ProtonReconnect {
             throw "Proton VPN $TimeoutSeconds saniye icinde yeniden baglanmadi; Discord eski VPN rotasiyla baslatilmadi."
         }
         $message = "Yeniden baglanti henuz algilanamadi.`n`n$instructions"
+    }
+}
+
+function Wait-ProtonConnected {
+    param([int]$TimeoutSeconds = 180)
+
+    if ($WhatIfPreference) { return }
+
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    $announced = $false
+    while ($true) {
+        $events = @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles))
+        if ($events.Count -eq 0) {
+            Write-Warning 'Proton logu okunamadi; VPN baglantisi dogrulanamadi.'
+            return
+        }
+        if ($events[-1].Status -eq 'Connected') {
+            if ($announced) { Write-Host '[VPN] Proton VPN baglandi.' -ForegroundColor Green }
+            return
+        }
+        if ([DateTime]::UtcNow -ge $deadline) {
+            throw "Proton VPN $TimeoutSeconds saniye icinde baglanmadi; Discord baslatilmadi. Proton VPN'e baglanip baslaticiyi tekrar calistirin."
+        }
+        if (-not $announced) {
+            Write-Host '[VPN] Discord icin Proton VPN baglantisi bekleniyor...' -ForegroundColor Yellow
+            $announced = $true
+        }
+        Start-Sleep -Seconds 1
     }
 }
 
@@ -529,6 +558,7 @@ if (-not $update.Changed) {
     Write-Host "[STABIL] Proton VPN uygulama rotalari zaten guncel." -ForegroundColor Green
     # An earlier run may have changed the file without the tunnel being rebuilt.
     Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath
+    if (-not $RobloxOnly) { Wait-ProtonConnected }
     return
 }
 
@@ -563,3 +593,4 @@ finally {
 }
 
 Wait-ProtonReconnect -MarkerPath $reconnectMarkerPath -GraceSeconds $(if ($protonWasRunning) { 30 } else { 0 })
+if (-not $RobloxOnly) { Wait-ProtonConnected }

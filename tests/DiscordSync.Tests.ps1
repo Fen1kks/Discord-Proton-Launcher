@@ -126,7 +126,26 @@ foreach ($edition in @('Standard', 'Developer-Equicord')) {
         [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T08:00:00.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Connecting. | {}`r`n")
         $connecting = @(Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles))
         if ((Get-ProtonReconnectState -Events $connecting -SinceUtc $changedUtc) -ne 'Connecting') { throw 'A tunnel that is still being built must not be treated as ready.' }
-        [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T08:00:03.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Connected. Connected to server US-MA#193 | {}`r`n")
+        $warnings = @(Wait-ProtonReconnect -MarkerPath $markerPath -TimeoutSeconds 1 3>&1)
+        if ($warnings.Count -ne 1) { throw 'A tunnel still connecting must not ask the user to reconnect.' }
+
+        # Sequence from a real failure: Proton connected seconds after the launcher gave up and started Discord.
+        $tunnelStayedDown = $false
+        try { Wait-ProtonConnected -TimeoutSeconds 1 }
+        catch {
+            if ($_.Exception.Message -notlike 'Proton VPN 1 saniye icinde baglanmadi*') { throw }
+            $tunnelStayedDown = $true
+        }
+        if (-not $tunnelStayedDown) { throw 'Discord must not start while the tunnel is down.' }
+        & {
+            function Start-Sleep {
+                param($Seconds)
+                [IO.File]::AppendAllText($script:testProtonLog, "2026-10-20T08:00:03.000Z | INFO  | CONN.CONNECT:TRIGGER | [CONNECTION_PROCESS] Status updated to Connected. Connected to server US-MA#193 | {}`r`n")
+            }
+            Wait-ProtonConnected -TimeoutSeconds 30
+        }
+        if ((Get-ProtonConnectionEvents -LogPaths (Get-ProtonClientLogFiles))[-1].Status -ne 'Connected') { throw 'The wait must end only once Proton reports Connected.' }
+        if ([regex]::Matches([IO.File]::ReadAllText($path), '(?m)^\s*if \(-not \$RobloxOnly\) \{ Wait-ProtonConnected \}').Count -ne 2) { throw 'Both sync paths must wait for the tunnel before Discord starts.' }
         Wait-ProtonReconnect -MarkerPath $markerPath -TimeoutSeconds 1 -GraceSeconds 30
         if (Test-Path -LiteralPath $markerPath) { throw 'A reconnect after the change must clear the pending marker.' }
         if ((Find-ProtonMainWindow -ProcessId $PID) -ne [IntPtr]::Zero) { throw 'Only Proton main windows may be selected for closing.' }
